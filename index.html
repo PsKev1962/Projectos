@@ -358,20 +358,44 @@ function loadData(cb){
 }
 
 function saveData(cb){
-  // Always save locally first and show success immediately
   localSave();
   setSS('ok','Saved '+new Date().toLocaleTimeString());
   if(cb) cb();
-  // Then sync to Google Sheet silently in background
   if(!SCRIPT_URL) return;
+  // Send data to Google Sheet via GET with encoded data
   var encoded = encodeURIComponent(JSON.stringify(DB));
   var url = SCRIPT_URL + '?action=save&data=' + encoded;
-  var img = new Image();
-  img.src = url;
+  fetch(url, {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.ok){ setSS('ok','Saved to Sheet '+new Date().toLocaleTimeString()); }
+    })
+    .catch(function(){ /* silent fail - local backup kept */ });
 }
 
 function localSave(){try{localStorage.setItem('pos_db',JSON.stringify(DB));}catch(e){}}
-function doSync(){loadData(function(){renderAll();toast('Synced','ok');});}
+function doSync(){
+  // Save current data first, then reload from sheet
+  setSS('syncing','Saving...');
+  var encoded = encodeURIComponent(JSON.stringify(DB));
+  var url = SCRIPT_URL + '?action=save&data=' + encoded;
+  fetch(url, {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.ok){
+        toast('Saved & synced','ok');
+        setSS('ok','Synced '+new Date().toLocaleTimeString());
+      } else {
+        toast('Sync error — data kept locally','err');
+        setSS('error','Sync error');
+      }
+    })
+    .catch(function(){
+      localSave();
+      toast('Offline — saved locally','ok');
+      setSS('error','Offline');
+    });
+}
 
 function mutate(){saveData(null);renderAll();}
 
@@ -413,12 +437,18 @@ function renderEntList(){
   var el=document.getElementById('entity-list');if(!el)return;
   el.innerHTML=DB.entities.map(function(e){
     var c=DB.projects.filter(function(p){return p.entity===e.id;}).length;
-    return '<div class="entity-row'+(ST.entity===e.id?' sel':'')+'" onclick="setEntity(\''+e.id+'\')">'+
+    return '<div class="entity-row'+(ST.entity===e.id?' sel':'')+'" onclick="setEntity(\'' +e.id+ '\')">' +
       '<span class="entity-dot" style="background:'+e.color+'"></span>'+
       '<span class="entity-name">'+h(e.name)+'</span>'+
-      '<span class="entity-count">'+c+'</span></div>';
+      '<span class="entity-count">'+c+'</span>'+
+      '<span style="display:flex;gap:3px;margin-left:4px">'+
+        '<span onclick="event.stopPropagation();editEntity(\'' +e.id+ '\')" style="cursor:pointer;font-size:11px;color:var(--text4);padding:1px 4px" title="Edit">&#9998;</span>'+
+        '<span onclick="event.stopPropagation();deleteEntity(\'' +e.id+ '\')" style="cursor:pointer;font-size:11px;color:var(--text4);padding:1px 4px" title="Delete">&#10005;</span>'+
+      '</span>'+
+      '</div>';
   }).join('');
 }
+
 
 function fps(){
   var p=DB.projects;
@@ -602,20 +632,108 @@ function renderTasks(){
 
 function renderTeam(){
   var html='<div class="page-header"><div class="page-title">Team Members</div><button class="tb-btn tb-btn-accent" onclick="openNewMember()">+ Add Member</button></div>';
-  if(!DB.members.length)return html+'<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No team members yet</div></div>';
+  if(!DB.members.length)return html+'<div class="empty-state"><div class="empty-icon">&#128101;</div><div class="empty-text">No team members yet</div></div>';
   return html+'<div class="team-grid">'+DB.members.map(function(m){
     var ps=DB.projects.filter(function(p){return p.members&&p.members.indexOf(m.id)>-1;});
     var ot=0;ps.forEach(function(p){if(p.tasks)p.tasks.forEach(function(t){if(!t.done&&t.assign===m.id)ot++;});});
-    var e=ge(m.entity);
+    var entities=m.entities||[m.entity];
+    var entNames=entities.map(function(id){return ge(id).name;}).join(', ');
+    var dotColor=(ge(entities[0]||'').color)||'#888';
+    var editBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px" onclick="editMember(\'' +m.id+ '\')">&#9998; Edit</button>';
+    var delBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteMember(\'' +m.id+ '\')">&#10005;</button>';
     return '<div class="mem-card">'+
-      '<div class="mem-av" style="background:'+m.color+'">'+h(m.initials)+'</div>'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
+        '<div class="mem-av" style="background:'+m.color+'">'+h(m.initials)+'</div>'+
+        '<div style="display:flex;gap:6px">'+editBtn+delBtn+'</div>'+
+      '</div>'+
       '<div class="mem-nm">'+h(m.name)+'</div>'+
       '<div class="mem-em">'+h(m.email)+'</div>'+
-      '<div style="font-size:11px;margin-top:2px;color:'+e.color+'">'+h(e.name)+'</div>'+
-      '<div class="mem-stats"><div class="mst"><div class="mst-v">'+ps.length+'</div><div class="mst-l">Projects</div></div>'+
-      '<div class="mst"><div class="mst-v">'+ot+'</div><div class="mst-l">Open Tasks</div></div></div></div>';
+      '<div style="font-size:11px;margin-top:2px;color:'+dotColor+'">'+h(entNames)+'</div>'+
+      '<div class="mem-stats">'+
+        '<div class="mst"><div class="mst-v">'+ps.length+'</div><div class="mst-l">Projects</div></div>'+
+        '<div class="mst"><div class="mst-v">'+ot+'</div><div class="mst-l">Open Tasks</div></div>'+
+      '</div></div>';
   }).join('')+'</div>';
 }
+
+
+function editMember(id){
+  var m=DB.members.find(function(x){return x.id===id;});if(!m)return;
+  var eoCBs=DB.entities.map(function(e){
+    var checked=(m.entities||[m.entity]).indexOf(e.id)>-1;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px">'+
+      '<input type="checkbox" class="nm-ent-cb" value="'+e.id+'"'+(checked?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)">'+
+      '<span style="background:'+e.color+';width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">'+h(e.short)+'</span>'+
+      h(e.name)+'</label>';
+  }).join('');
+  var colOpts=COLORS.map(function(c){
+    return '<div class="co'+(m.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'" onclick="pickColData(this)"></div>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Edit Team Member';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" value="'+h(m.name)+'"></div>'+
+    '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" value="'+h(m.email)+'"></div>'+
+    '<div class="fr"><label class="fl">Entities</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
+  window._col=m.color;
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('nm-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    var cbs=document.querySelectorAll('.nm-ent-cb:checked');
+    var entities=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    if(!entities.length){alert('Please select at least one entity.');return;}
+    var ini=nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    m.name=nm;m.email=document.getElementById('nm-em').value.trim();
+    m.entities=entities;m.entity=entities[0];
+    m.color=window._col||m.color;m.initials=ini;
+    closeModal();mutate();toast('Member updated','ok');
+  };
+  showModal();
+}
+
+function deleteMember(id){
+  var m=DB.members.find(function(x){return x.id===id;});if(!m)return;
+  if(!confirm('Delete '+m.name+'? This cannot be undone.'))return;
+  DB.members=DB.members.filter(function(x){return x.id!==id;});
+  mutate();toast('Member deleted','ok');
+}
+
+function editEntity(id){
+  var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
+  var colOpts=COLORS.map(function(c){
+    return '<div class="co'+(e.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'" onclick="pickColData(this)"></div>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Edit Entity';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Entity Name *</label><input class="fi" id="ne-nm" value="'+h(e.name)+'"></div>'+
+    '<div class="fr"><label class="fl">Short Code (2-3 letters)</label><input class="fi" id="ne-sh" value="'+h(e.short)+'" maxlength="3" style="text-transform:uppercase"></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
+  window._col=e.color;
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('ne-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    e.name=nm;
+    e.short=(document.getElementById('ne-sh').value.trim().toUpperCase()||nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase());
+    e.color=window._col||e.color;
+    closeModal();mutate();toast('Entity updated','ok');
+  };
+  showModal();
+}
+
+function deleteEntity(id){
+  var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
+  var projCount=DB.projects.filter(function(p){return p.entity===id;}).length;
+  if(projCount>0){alert('Cannot delete — this entity has '+projCount+' project(s). Reassign or delete them first.');return;}
+  if(!confirm('Delete '+e.name+'?'))return;
+  DB.entities=DB.entities.filter(function(x){return x.id!==id;});
+  mutate();toast('Entity deleted','ok');
+}
+
+function pickColData(el){
+  window._col=el.getAttribute('data-c');
+  document.querySelectorAll('.co').forEach(function(d){d.classList.remove('sel');});
+  el.classList.add('sel');
+}
+
 
 function renderTpls(){
   return '<div class="page-header"><div class="page-title">Templates</div></div>'+
