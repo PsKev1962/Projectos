@@ -1,637 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ProjectOS</title>
+<style>
+/* ── SQUARESPACE RESET ── */
+html,body{margin:0!important;padding:0!important;overflow:hidden!important;height:100%!important;width:100%!important;background:#f8f9fb!important;}
+#page,#content,.content-wrapper,.site-wrapper,.sqs-layout,.sqs-col-12,.sqs-block,.sqs-block-content,.fluid-engine,.sqs-col-wrappers,.row,.container,.Index,.index-section,.sections,.main-content,.site-canvas{padding:0!important;margin:0!important;max-width:100vw!important;width:100vw!important;min-height:0!important;height:auto!important;}
+:root{
+  --bg:#f8f9fb;--bg2:#ffffff;--bg3:#f1f3f6;--bg4:#e8eaef;
+  --text:#111827;--text2:#374151;--text3:#6b7280;--text4:#9ca3af;
+  --border:#e5e7eb;--border2:#d1d5db;
+  --accent:#4f46e5;--accent2:#4338ca;--accent-light:#eef2ff;
+  --green:#22c55e;--green-light:#f0fdf4;
+  --red:#ef4444;--red-light:#fef2f2;
+  --orange:#f97316;--yellow:#eab308;--yellow-light:#fefce8;
+  --blue:#3b82f6;--blue-light:#eff6ff;
+  --sidebar:220px;--topbar:52px;--radius:8px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08);--shadow2:0 4px 12px rgba(0,0,0,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+#pos-root{display:flex;flex-direction:column;width:100%;height:100vh;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);overflow:hidden;}
+#topbar{display:flex;align-items:center;justify-content:space-between;height:var(--topbar);min-height:var(--topbar);flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;gap:12px;box-shadow:var(--shadow);position:relative;z-index:10;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0;}
+.topbar-brand{font-size:15px;font-weight:700;color:var(--text);}
+.topbar-tag{font-size:11px;color:var(--text4);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.sync-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text4);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s;}
+.sync-dot.syncing{background:var(--orange);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--red);}
+.sync-dot.setup{background:var(--yellow);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.tb-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;}
+.tb-btn:hover{background:var(--bg4);}
+.tb-btn-accent{background:var(--accent);border-color:var(--accent);color:#fff;}
+.tb-btn-accent:hover{background:var(--accent2);border-color:var(--accent2);}
+#app-body{display:flex;flex:1 1 0;overflow:hidden;min-height:0;}
+#sidebar{width:var(--sidebar);min-width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-section{padding:16px 12px 6px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text4);text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:1px 6px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .12s;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600;}
+.nav-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;}
+.nav-badge-blue{background:var(--blue);}
+.entity-list{padding:6px;overflow-y:auto;flex:1;}
+.entity-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:all .12s;}
+.entity-row:hover{background:var(--bg3);}
+.entity-row.sel{background:var(--accent-light);}
+.entity-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.entity-name{font-size:12px;color:var(--text2);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.entity-count{font-size:11px;color:var(--text4);background:var(--bg3);border-radius:10px;padding:0 6px;}
+.add-ent-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--text4);font-size:12px;transition:all .12s;margin:0 6px 8px;}
+.add-ent-btn:hover{background:var(--bg3);color:var(--accent);}
+#main{flex:1 1 0;overflow-y:auto;overflow-x:hidden;background:var(--bg);min-width:0;}
+.main-inner{padding:24px;max-width:1200px;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.02em;}
+.page-subtitle{font-size:13px;color:var(--text3);margin-top:2px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);transition:all .15s;}
+.stat-card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);}
+.stat-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text4);margin-bottom:8px;}
+.stat-value{font-size:28px;font-weight:700;color:var(--text);}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+.stat-card.red{border-color:var(--red);background:var(--red-light);}
+.stat-card.red .stat-value{color:var(--red);}
+.stat-card.green .stat-value{color:var(--green);}
+.stat-card.blue .stat-value{color:var(--blue);}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-size:14px;font-weight:700;color:var(--text);}
+.section-link{font-size:12px;color:var(--accent);cursor:pointer;font-weight:500;}
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-bottom:28px;}
+.ent-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.ent-card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);}
+.ent-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.ent-dot{width:10px;height:10px;border-radius:50%;}
+.ent-nm{font-size:13px;font-weight:700;color:var(--text);}
+.ent-mg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:10px;}
+.ent-ml{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.05em;}
+.ent-mv{font-size:16px;font-weight:700;color:var(--text);}
+.ent-bw{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin:8px 0;}
+.ent-bf{height:100%;border-radius:2px;}
+.ent-pc{font-size:11px;color:var(--text3);}
+.av-row{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
+.proj-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.proj-thead{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 50px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);}
+.proj-row{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 50px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .12s;}
+.proj-row:last-child{border-bottom:none;}
+.proj-row:hover{background:var(--bg3);}
+.pnm{font-size:13px;font-weight:600;color:var(--text);}
+.psub{font-size:11px;color:var(--text4);margin-top:2px;}
+.etag{font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap;}
+.spill{font-size:10px;font-weight:700;border-radius:10px;padding:3px 9px;white-space:nowrap;}
+.s-active{background:var(--green-light);color:var(--green);}
+.s-planning{background:var(--blue-light);color:var(--blue);}
+.s-hold{background:var(--yellow-light);color:var(--yellow);}
+.s-risk{background:var(--red-light);color:var(--red);}
+.s-done{background:var(--bg3);color:var(--text3);}
+.phi{color:var(--red);font-weight:700;font-size:12px;}
+.pme{color:var(--orange);font-weight:700;font-size:12px;}
+.plo{color:var(--green);font-weight:700;font-size:12px;}
+.pw{display:flex;align-items:center;gap:6px;}
+.pb{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.pbf{height:100%;border-radius:2px;background:var(--accent);}
+.ppc{font-size:11px;color:var(--text4);white-space:nowrap;}
+.row-acts{display:flex;gap:4px;opacity:0;transition:opacity .12s;}
+.proj-row:hover .row-acts{opacity:1;}
+.delbtn{background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer;color:var(--text3);}
+.delbtn:hover{background:var(--red-light);color:var(--red);border-color:var(--red);}
+.kanban-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;}
+.kcol{min-width:240px;max-width:260px;flex-shrink:0;}
+.kcol-hdr{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:6px 6px 0 0;background:var(--bg3);border:1px solid var(--border);border-bottom:none;}
+.kcol-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.kcol-cnt{margin-left:auto;font-size:11px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0 6px;color:var(--text4);}
+.kcol-cards{border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:80px;background:var(--bg);}
+.kcard{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.kcard:hover{box-shadow:var(--shadow2);}
+.kcard-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.kcard-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.kcard-prog{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:8px;}
+.kcard-pf{height:100%;border-radius:2px;background:var(--accent);}
+.task-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.fb{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--text3);font-family:inherit;transition:all .12s;}
+.fb.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.task-list{display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.task-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
+.task-row:last-child{border-bottom:none;}
+.task-row:hover{background:var(--bg3);}
+.tck{width:16px;height:16px;border:2px solid var(--border2);border-radius:4px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.tck.done{background:var(--green);border-color:var(--green);color:#fff;font-size:10px;}
+.ttx{flex:1;font-size:13px;color:var(--text);}
+.ttx.done{text-decoration:line-through;color:var(--text4);}
+.tcat{font-size:10px;font-weight:600;color:var(--text4);background:var(--bg3);border-radius:4px;padding:2px 6px;}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.mem-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+.mem-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;margin-bottom:12px;}
+.mem-nm{font-size:14px;font-weight:700;color:var(--text);}
+.mem-em{font-size:12px;color:var(--text3);margin-top:2px;word-break:break-all;}
+.mem-stats{display:flex;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.mst{text-align:center;}
+.mst-v{font-size:18px;font-weight:700;color:var(--text);}
+.mst-l{font-size:10px;color:var(--text4);margin-top:2px;}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.tpl-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.tpl-card:hover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light);}
+.tpl-icon{font-size:28px;margin-bottom:10px;}
+.tpl-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.tpl-desc{font-size:12px;color:var(--text3);line-height:1.5;}
+.tpl-cnt{font-size:11px;color:var(--text4);margin-top:8px;}
+.tpl-btn{margin-top:12px;background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;}
+.tpl-btn:hover{background:var(--accent);color:#fff;}
+.sq-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px;}
+.sq-link{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;transition:all .15s;box-shadow:var(--shadow);text-decoration:none;display:block;}
+.sq-link:hover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-light);}
+.sq-li{font-size:22px;margin-bottom:6px;}
+.sq-ll{font-size:12px;font-weight:600;color:var(--text);}
+.sq-ls{font-size:10px;color:var(--text4);margin-top:2px;}
+.alert-list{display:flex;flex-direction:column;gap:8px;}
+.alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow);}
+.alert-card.high{border-left:3px solid var(--red);}
+.alert-card.med{border-left:3px solid var(--orange);}
+.alert-icon{font-size:20px;flex-shrink:0;}
+.alert-title{font-size:13px;font-weight:600;color:var(--text);}
+.alert-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.alert-tag{margin-left:auto;font-size:10px;font-weight:700;border-radius:10px;padding:2px 8px;flex-shrink:0;}
+#detail-panel{width:360px;min-width:360px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s;}
+#detail-panel.hidden{width:0;min-width:0;border:none;}
+.dp-hdr{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;}
+.dp-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text4);margin-left:auto;flex-shrink:0;}
+.dp-title{font-size:15px;font-weight:700;color:var(--text);}
+.dp-meta{font-size:12px;color:var(--text3);margin-top:3px;}
+.dp-body{flex:1;overflow-y:auto;padding:16px;}
+.dp-sec{margin-bottom:20px;}
+.dp-sec-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text4);margin-bottom:10px;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px;}
+.prog-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;background:var(--accent);}
+.note-list{display:flex;flex-direction:column;gap:8px;}
+.note-item{background:var(--bg3);border-radius:6px;padding:10px;font-size:12px;}
+.note-who{font-weight:600;color:var(--accent);margin-right:6px;}
+.note-when{color:var(--text4);font-size:11px;}
+.note-txt{margin-top:4px;color:var(--text2);line-height:1.5;}
+.note-area{border:1px solid var(--border);border-radius:5px;padding:8px;font-size:12px;color:var(--text);background:var(--bg);font-family:inherit;resize:none;min-height:60px;width:100%;margin-top:8px;}
+.note-area:focus{outline:none;border-color:var(--accent);}
+.st-sel{border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:12px;color:var(--text);background:var(--bg);font-family:inherit;width:100%;}
+.st-sel:focus{outline:none;border-color:var(--accent);}
+#modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;}
+#modal-overlay.show{display:flex;}
+#modal-box{background:var(--bg2);border-radius:12px;padding:24px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-height:80vh;overflow-y:auto;}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:18px;}
+.fr{margin-bottom:14px;}
+.fl{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;}
+.fi,.fs,.fta{width:100%;border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);background:var(--bg);font-family:inherit;}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--accent);}
+.fta{resize:none;min-height:80px;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+.btn{border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s;}
+.btn-ghost{background:var(--bg3);color:var(--text2);}
+.btn-ghost:hover{background:var(--bg4);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.color-opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.co{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;}
+.co.sel{border-color:var(--text);}
+#toast{position:absolute;bottom:24px;right:24px;background:#111827;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none;}
+#toast.show{opacity:1;}
 
-/
-“Hi Claude. I’m working on my Concierge Command Centre tool for People of The Way — a multi-brand church organisation on the Gold Coast, Australia.
+.setup-banner{background:var(--yellow-light);border:1px solid var(--yellow);border-radius:var(--radius);padding:16px;margin-bottom:20px;font-size:13px;line-height:1.7;}
+.setup-banner strong{color:var(--text);}
+.setup-banner a{color:var(--accent);}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text4);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.search-wrap{position:relative;margin-bottom:16px;}
+.search-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px 8px 34px;font-size:13px;color:var(--text);background:var(--bg2);font-family:inherit;}
+.search-input:focus{outline:none;border-color:var(--accent);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text4);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div id="pos-root">
 
-Live URL: https://pskev1962.github.io/Projectos/Concierge.html
-GitHub repo: PsKev1962/Projectos
-Google Drive file ID: 1C-TStoRU4xs8hQgO8XKDCi1-Y28K0v6H
-PIN: 1962
+  <div id="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">P</div>
+      <div><div class="topbar-brand">ProjectOS</div><div class="topbar-tag">Multi-Entity Manager</div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-pill"><div class="sync-dot" id="sync-dot"></div><span id="sync-lbl">Loading</span></div>
+      <button class="tb-btn" onclick="doSync()">↺ Sync</button>
+      <button class="tb-btn" onclick="exportData()">⬇ Export</button>
+      <button class="tb-btn" onclick="importData()">⬆ Import</button>
+      <button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button>
+    </div>
+  </div>
+  <div id="app-body">
+    <div id="sidebar">
+      <div class="sidebar-section">Navigation</div>
+      <div class="nav-item active" onclick="setView('dashboard')" data-view="dashboard"><span class="nav-icon">⊞</span>Dashboard</div>
+      <div class="nav-item" onclick="setView('attention')" data-view="attention"><span class="nav-icon">⚠</span>Needs Attention<span class="nav-badge" id="attn-badge" style="display:none">0</span></div>
+      <div class="nav-item" onclick="setView('projects')" data-view="projects"><span class="nav-icon">≡</span>All Projects<span class="nav-badge nav-badge-blue" id="proj-badge">0</span></div>
+      <div class="nav-item" onclick="setView('kanban')" data-view="kanban"><span class="nav-icon">⊟</span>Board View</div>
+      <div class="nav-item" onclick="setView('gantt')" data-view="gantt"><span class="nav-icon">—</span>Timeline</div>
+      <div class="nav-item" onclick="setView('tasks')" data-view="tasks"><span class="nav-icon">✓</span>All Tasks</div>
+      <div class="nav-item" onclick="setView('team')" data-view="team"><span class="nav-icon">⚇</span>Team Members</div>
+      <div class="nav-item" onclick="setView('templates')" data-view="templates"><span class="nav-icon">⊡</span>Templates</div>
+      <div class="nav-item" onclick="setView('squarespace')" data-view="squarespace"><span class="nav-icon">⬡</span>Squarespace</div>
+      <div class="sidebar-section" style="margin-top:8px;">Entities</div>
+      <div class="entity-list" id="entity-list"></div>
+      <div style="padding:0 6px 10px;"><div class="add-ent-btn" onclick="openNewEntity()">+ Add Entity</div></div>
+    </div>
+    <div id="main"><div class="main-inner" id="main-inner"></div></div>
+    <div id="detail-panel" class="hidden"></div>
+  </div>
+  <div id="modal-overlay" onclick="closeModalOvl(event)">
+    <div id="modal-box">
+      <div class="modal-title" id="modal-title"></div>
+      <div id="modal-body"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="modal-submit">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
 
-Today’s task: I have 16 new scripts I want added to the tool’s DS array. I’ll paste them in once you’ve pulled the current file from Google Drive using the read_file_content tool. Please walk me through this step by step and confirm before making any changes.”**
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURATION — paste your Google Apps Script URL here
+// after completing the one-time setup in the Squarespace view
+// ═══════════════════════════════════════════════════════════
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPkiN3PDsfDVssBaGj2M86jtaJlN1vZWgnAui-d9_2AwBmhXkkI5AicaillGQ2dxeT/exec';
+var SHEET_ID = '1CvbmCZhsyPTDfxUYLYxUwodfc28LlPSY61agOdmaA3U';
+var SHEET_LINK = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID;
 
-Show more
-9:58 PM
+var COLORS = ['#4f46e5','#22c55e','#f97316','#ef4444','#3b82f6','#eab308','#8b5cf6','#14b8a6'];
 
-Searched available tools
-Searched available tools
-Good — tools loaded. Now pulling the file from Google Drive using read_file_content.
+var TEMPLATES = [
+  {id:'bt1',name:'Website Build',icon:'🌐',desc:'End-to-end website design and development.',tasks:[{title:'Discovery & requirements',cat:'Strategy',pri:'high'},{title:'Wireframes',cat:'Design',pri:'high'},{title:'Visual design',cat:'Design',pri:'high'},{title:'Development',cat:'Development',pri:'high'},{title:'QA testing',cat:'QA',pri:'high'},{title:'Go-live',cat:'Launch',pri:'high'}]},
+  {id:'bt2',name:'Squarespace Website',icon:'🟦',desc:'Squarespace build from brief to live.',tasks:[{title:'Site brief & goals',cat:'Strategy',pri:'high'},{title:'Template selection',cat:'Design',pri:'high'},{title:'Brand colours & fonts',cat:'Design',pri:'high'},{title:'Homepage content',cat:'Content',pri:'high'},{title:'Inner pages',cat:'Content',pri:'high'},{title:'SEO & metadata',cat:'Launch',pri:'high'},{title:'Mobile testing',cat:'QA',pri:'high'},{title:'Domain & SSL',cat:'Launch',pri:'high'},{title:'Go-live handover',cat:'Launch',pri:'high'}]},
+  {id:'bt3',name:'Marketing Campaign',icon:'📢',desc:'Full campaign from brief to results.',tasks:[{title:'Campaign brief',cat:'Strategy',pri:'high'},{title:'Audience research',cat:'Strategy',pri:'med'},{title:'Creative concept',cat:'Creative',pri:'high'},{title:'Asset production',cat:'Production',pri:'high'},{title:'Campaign go-live',cat:'Launch',pri:'high'},{title:'Post-campaign review',cat:'Review',pri:'high'}]},
+  {id:'bt4',name:'Software Development',icon:'💻',desc:'Agile software feature cycle.',tasks:[{title:'Requirements',cat:'Planning',pri:'high'},{title:'Architecture',cat:'Planning',pri:'high'},{title:'UI/UX design',cat:'Design',pri:'high'},{title:'Backend development',cat:'Development',pri:'high'},{title:'Frontend development',cat:'Development',pri:'high'},{title:'QA & bug fixes',cat:'Testing',pri:'high'},{title:'Production release',cat:'Release',pri:'high'}]},
+  {id:'bt5',name:'Event Planning',icon:'🎉',desc:'Event from concept to debrief.',tasks:[{title:'Event brief & budget',cat:'Planning',pri:'high'},{title:'Venue booking',cat:'Planning',pri:'high'},{title:'Suppliers & vendors',cat:'Operations',pri:'high'},{title:'Promotion',cat:'Marketing',pri:'med'},{title:'Day-of coordination',cat:'Operations',pri:'high'},{title:'Post-event debrief',cat:'Review',pri:'med'}]}
+];
 
+var DB = {entities:[],members:[],projects:[]};
+var ST = {view:'dashboard',entity:null,project:null,fstat:'all',search:''};
 
-Read file content
-Read file content
-File retrieved successfully. I can see the full current content of Concierge.html.
+// ── HELPERS ──
+function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function ge(id){return DB.entities.find(function(e){return e.id===id;})||{name:'?',color:'#888',short:'?'};}
+function gm(id){return DB.members.find(function(m){return m.id===id;})||{name:'?',color:'#888',initials:'?'};}
+function gp(id){return DB.projects.find(function(p){return p.id===id;});}
+function uid(){return 'x'+Date.now()+Math.floor(Math.random()*9999);}
+function isOD(p){var d=parseDue(p.due);return d&&d<new Date()&&p.status!=='done';}
+function isDS(p){var d=parseDue(p.due);if(!d)return false;return (d-new Date())/86400000<=7&&(d-new Date())/86400000>=0&&p.status!=='done';}
+function parseDue(d){if(!d)return null;var r=new Date(d);return isNaN(r)?null:r;}
 
-Here's what I can confirm before we do anything:
+// ── SYNC STATUS ──
+function setSS(state,lbl){
+  var d=document.getElementById('sync-dot');
+  var l=document.getElementById('sync-lbl');
+  if(d) d.className='sync-dot'+(state==='syncing'?' syncing':state==='error'?' error':state==='setup'?' setup':'');
+  if(l) l.textContent=lbl;
+}
 
-Current state of the DS array: The file contains 15 scripts across 4 brands:
+// ── DEFAULTS ──
+function defaults(){
+  DB={
+    entities:[{id:'e1',name:'Apex Holdings',color:'#4f46e5',short:'AH'},{id:'e2',name:'Meridian Group',color:'#22c55e',short:'MG'},{id:'e3',name:'Nova Ventures',color:'#f97316',short:'NV'},{id:'e4',name:'BlueLine Co.',color:'#3b82f6',short:'BL'}],
+    members:[{id:'m1',name:'Alex Reeves',email:'alex@apexholdings.com',color:'#4f46e5',initials:'AR',entity:'e1'},{id:'m2',name:'Morgan West',email:'morgan@meridiangroup.com',color:'#22c55e',initials:'MW',entity:'e2'},{id:'m3',name:'Jamie Liu',email:'jamie@novaventures.com',color:'#f97316',initials:'JL',entity:'e3'},{id:'m4',name:'Sam Torres',email:'sam@bluelineco.com',color:'#3b82f6',initials:'ST',entity:'e4'}],
+    projects:[{id:'p1',name:'Brand Refresh 2025',entity:'e1',status:'active',priority:'high',progress:45,due:'2025-08-15',lead:'m1',members:['m1'],desc:'Full brand identity refresh.',tasks:[{id:'t1',title:'Brand audit',cat:'Strategy',pri:'high',done:true,assign:'m1'},{id:'t2',title:'Concept development',cat:'Design',pri:'high',done:false,assign:'m1'}],notes:[],docs:[]},{id:'p2',name:'Website Redesign',entity:'e2',status:'active',priority:'high',progress:60,due:'2025-07-01',lead:'m2',members:['m2'],desc:'Redesign on Squarespace.',tasks:[{id:'t3',title:'Discovery',cat:'Strategy',pri:'high',done:true,assign:'m2'},{id:'t4',title:'Development',cat:'Dev',pri:'high',done:false,assign:'m2'}],notes:[],docs:[]}]
+  };
+}
 
-OurChurch (6): oc-gen, oc-ven, oc-vol, oc-pas, oc-evt, oc-giv
-Love This City (3): ltc-gen, ltc-giv, ltc-pas
-The Junction (3): tj-gen, tj-ven, tj-pas
-HeavenScentMe (3): hs-gen, hs-svc, hs-pas
-The plan: You want to add 16 new scripts to this array. I'll slot them in carefully after the last existing script in the appropriate brand grouping, making sure the JS syntax stays valid.
+// ── GOOGLE APPS SCRIPT SYNC ──
+function loadData(cb){
+  if(!SCRIPT_URL){
+    setSS('ok','Local data');
+    var bk=localStorage.getItem('pos_db');
+    if(bk){try{DB=JSON.parse(bk);}catch(e){defaults();}}else{defaults();}
+    cb&&cb();
+    return;
+  }
+  setSS('syncing','Loading...');
+  var url=SCRIPT_URL+'?t='+Date.now();
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.ok&&res.data&&res.data.entities){
+        DB=res.data;
+        setSS('ok','Synced '+new Date().toLocaleTimeString());
+        localSave();
+      } else {
+        defaults();
+        setSS('ok','New database');
+        saveData(null);
+      }
+      cb&&cb();
+    })
+    .catch(function(){
+      var bk=localStorage.getItem('pos_db');
+      if(bk){try{DB=JSON.parse(bk);}catch(e){defaults();}}else{defaults();}
+      setSS('error','Offline — local copy');
+      cb&&cb();
+    });
+}
 
-Before we proceed — two quick questions:
+function saveData(cb){
+  localSave();
+  setSS('ok','Saved '+new Date().toLocaleTimeString());
+  if(cb) cb();
+  if(!SCRIPT_URL) return;
+  // Send data to Google Sheet via GET with encoded data
+  var encoded = encodeURIComponent(JSON.stringify(DB));
+  var url = SCRIPT_URL + '?action=save&data=' + encoded;
+  fetch(url, {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.ok){ setSS('ok','Saved to Sheet '+new Date().toLocaleTimeString()); }
+    })
+    .catch(function(){ /* silent fail - local backup kept */ });
+}
 
-Are the 16 new scripts spread across the existing 4 brands, or do any belong to a new brand?
-When you paste the scripts, are they in JS object format (like the existing ones), or plain text that I'll need to convert?
-Go ahead and paste them whenever you're ready — I'll review them and confirm exactly where each one will be inserted before touching anything.
+function localSave(){try{localStorage.setItem('pos_db',JSON.stringify(DB));}catch(e){}}
+function doSync(){
+  // Save current data first, then reload from sheet
+  setSS('syncing','Saving...');
+  var encoded = encodeURIComponent(JSON.stringify(DB));
+  var url = SCRIPT_URL + '?action=save&data=' + encoded;
+  fetch(url, {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.ok){
+        toast('Saved & synced','ok');
+        setSS('ok','Synced '+new Date().toLocaleTimeString());
+      } else {
+        toast('Sync error — data kept locally','err');
+        setSS('error','Sync error');
+      }
+    })
+    .catch(function(){
+      localSave();
+      toast('Offline — saved locally','ok');
+      setSS('error','Offline');
+    });
+}
 
-Can you retrieve them from our previous chat?
+function mutate(){saveData(null);renderAll();}
 
-9:59 PM
+// ── RENDER ──
+function renderAll(){
+  updateBadges();renderEntList();
+  var mi=document.getElementById('main-inner');
+  if(!mi)return;
+  var v=ST.view;
+  if(v==='dashboard')mi.innerHTML=renderDash();
+  else if(v==='attention')mi.innerHTML=renderAttn();
+  else if(v==='projects')mi.innerHTML=renderProjs();
+  else if(v==='kanban')mi.innerHTML=renderKanban();
+  else if(v==='gantt')mi.innerHTML=renderGantt();
+  else if(v==='tasks')mi.innerHTML=renderTasks();
+  else if(v==='team')mi.innerHTML=renderTeam();
+  else if(v==='templates')mi.innerHTML=renderTpls();
+  else if(v==='squarespace')mi.innerHTML=renderSQ();
+}
 
-Relevant chats
-Relevant chats
-Found them. Let me grab the full set — I can see the chat but need to pull the complete middle section with all 16 scripts.
+function setView(v){
+  ST.view=v;ST.project=null;
+  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
+  var a=document.querySelector('[data-view="'+v+'"]');if(a)a.classList.add('active');
+  var dp=document.getElementById('detail-panel');if(dp){dp.classList.add('hidden');dp.innerHTML='';}
+  renderAll();
+}
 
+function setEntity(id){ST.entity=ST.entity===id?null:id;renderEntList();renderAll();}
 
-Relevant chats
-Relevant chats
-Good — I have the scripts from the previous chat. Let me pull the full middle section to get all 16 complete.
+function updateBadges(){
+  var attn=getAttn();
+  var ab=document.getElementById('attn-badge');
+  if(ab){if(attn.length){ab.style.display='';ab.textContent=attn.length;}else{ab.style.display='none';}}
+  var pb=document.getElementById('proj-badge');if(pb)pb.textContent=DB.projects.length;
+}
 
-
-Searched memory, searched the web
-Searched memory, searched the web
-I now have all 16 scripts from the previous chat. Let me do one more search to get the remaining TJ and HS scripts I haven't fully captured yet.
-
-
-Relevant chats
-Relevant chats
-I have all 16 scripts. Here's a full summary of what I've recovered before we do anything:
-
-OurChurch (4 new)
-
-OC-NEW-1: First-Time Visitor — What to Expect (Visitor Welcome)
-OC-NEW-2: Membership and Getting Connected (Discipleship / Belonging)
-OC-NEW-3: Kids and Youth Ministry (Family and Next Gen)
-OC-NEW-4: Prayer Request (Pastoral Care — priority flag)
-Love This City (4 new)
-
-LTC-NEW-1: How to Get Help / Access Support (Community Welfare — priority flag)
-LTC-NEW-2: Volunteering with Love This City (Get Involved)
-LTC-NEW-3: Corporate Partnerships and Sponsorship (Partnerships)
-LTC-NEW-4: (need to confirm — I saw it was about partnerships/director)
-The Junction (4 new)
-
-TJ-NEW-1: Café — Hours, Menu and Ordering (Café)
-TJ-NEW-2: Co-Working and Workspace (Workspace)
-TJ-NEW-3: Events — What's On (Events)
-TJ-NEW-4: Community Connection — The Junction's Vibe and Values (General / Community)
-HeavenScentMe (4 new)
-
-HS-NEW-1: Booking a Home and Care Service (Home & Care Bookings)
-HS-NEW-2: Café and Hospitality — Events and Catering (Café & Hospitality Bookings)
-HS-NEW-3: The Social Enterprise Story — Why HeavenScentMe? (About / Mission)
-HS-NEW-4: Becoming a HeavenScentMe Operator / Licensee (Business / Licensing)
-I'm missing the full LTC-NEW-3/4 content — I saw a partial snippet about corporate partnerships. Before I proceed, I want to confirm:
-
-Are you happy with this list as-is? And do you want me to check one more time for the LTC-NEW-3/4 details, or can you tell me what that script was about?
-
-Once you confirm, I'll convert all 16 into proper JS objects and show you exactly what will be added to the DS array — before touching anything.
-
-Have one look for it
-
-10:02 PM
-
-Relevant chats
-Relevant chats
-Got it — all 16 are fully recovered. Here's the complete picture confirmed:
-
-Love This City (the two I was missing):
-
-LTC-NEW-3: Tax-Deductible Giving and Donations (Giving) — PBI status, lovethiscity.org.au/give, large gifts refer to director
-LTC-NEW-4: Partnership or Sponsorship Enquiry (Corporate / Organisational) — corporate partners, co-delivery, refer to LTC Director
-All 16 scripts are now fully in hand. Here's the complete list confirmed:
-
-#	ID	Brand	Title
-1	oc-vis	OurChurch	First-Time Visitor — What to Expect
-2	oc-con	OurChurch	Membership and Getting Connected
-3	oc-kid	OurChurch	Kids and Youth Ministry
-4	oc-pra	OurChurch	Prayer Request ⚠️
-5	ltc-hlp	Love This City	How to Get Help / Access Support ⚠️
-6	ltc-vol	Love This City	Volunteering with Love This City
-7	ltc-tax	Love This City	Tax-Deductible Giving and Donations
-8	ltc-prt	Love This City	Partnership or Sponsorship Enquiry
-9	tj-caf	The Junction	Café — Hours, Menu and Ordering
-10	tj-wrk	The Junction	Co-Working and Workspace
-11	tj-evt	The Junction	Events — What's On
-12	tj-vib	The Junction	Community Connection — Vibe and Values
-13	hs-hom	HeavenScentMe	Booking a Home and Care Service
-14	hs-caf	HeavenScentMe	Café and Hospitality — Events and Catering
-15	hs-why	HeavenScentMe	The Social Enterprise Story — Why HSM?
-16	hs-opr	HeavenScentMe	Becoming a HeavenScentMe Operator / Licensee
-Ready to proceed? If you're happy with this list, my next step will be to convert all 16 into properly formatted JS objects and show them to you for review — before I touch the file. Just say the word.
-
-And they will all be editable after wards
-
-10:03 PM
-Yes, absolutely. Every script added to the DS array works exactly the same as the existing 15 — once they're in the tool, volunteers (or you) can:
-
-Edit any field — title, category, key info points, script text, escalation, SMS template, team notes
-Flag as Pastoral/Welfare
-Rate them (Works Well / Needs Update)
-Delete them if needed
-Add translations if you ever turn on additional languages
-All of that is handled by the existing edit modal — no extra code needed. The new scripts just slot in as standard entries.
-
-Shall I go ahead and convert all 16 into JS objects now and show them to you before we touch anything?
-
-Let’s do it
-
-10:03 PM
-
-Write the 16 new scripts as JS objects and syntax-check them
-Write the 16 new scripts as JS objects and syntax-check them
-All 16 parse cleanly — zero syntax errors. Here's a summary of exactly what's ready to insert:
-
-#	ID	Brand	Title	Pastoral?
-1	oc-vis	OurChurch	First-Time Visitor - What to Expect	—
-2	oc-con	OurChurch	Membership and Getting Connected	—
-3	oc-kid	OurChurch	Kids and Youth Ministry	—
-4	oc-pra	OurChurch	Prayer Request	⚠️ Yes
-5	ltc-hlp	Love This City	How to Get Help / Access Support	⚠️ Yes
-6	ltc-vol	Love This City	Volunteering with Love This City	—
-7	ltc-tax	Love This City	Tax-Deductible Giving and Donations	—
-8	ltc-prt	Love This City	Partnership or Sponsorship Enquiry	—
-9	tj-caf	The Junction	Cafe - Hours, Menu and Ordering	—
-10	tj-wrk	The Junction	Co-Working and Workspace	—
-11	tj-evt	The Junction	Events - What's On	—
-12	tj-vib	The Junction	Community Connection - Vibe and Values	—
-13	hs-hom	HeavenScentMe	Booking a Home and Care Service	—
-14	hs-caf	HeavenScentMe	Cafe and Hospitality - Events and Catering	—
-15	hs-why	HeavenScentMe	The Social Enterprise Story - Why HSM?	—
-16	hs-opr	HeavenScentMe	Becoming an Operator / Licensee	—
-Next step: I'll insert these into the DS array in the live file — each brand's new scripts placed directly after their existing ones.
-
-Ready to go ahead?
-
-Ok
-
-10:05 PM
-
-Ran 2 commands
-Ran 2 commands
-31 scripts confirmed — all present and accounted for. Now let me append the rest of the JavaScript (the DL array and all functions) to complete the file.
-
-
-Ran 2 commands
-Ran 2 commands
-Everything is verified and clean:
-
-31 scripts in the DS array (15 original + 16 new)
-16 quick links unchanged
-JS syntax: OK
-File is complete with closing </html>
-The file is ready. Now we need to get it onto GitHub. Here's what to do:
-
-Step 1 — Download the file
-
-I'll present it for download now.
+function renderEntList(){
+  var el=document.getElementById('entity-list');if(!el)return;
+  el.innerHTML=DB.entities.map(function(e){
+    var c=DB.projects.filter(function(p){return p.entity===e.id;}).length;
+    return '<div class="entity-row'+(ST.entity===e.id?' sel':'')+'" onclick="setEntity(\'' +e.id+ '\')">' +
+      '<span class="entity-dot" style="background:'+e.color+'"></span>'+
+      '<span class="entity-name">'+h(e.name)+'</span>'+
+      '<span class="entity-count">'+c+'</span>'+
+      '<span style="display:flex;gap:3px;margin-left:4px">'+
+        '<span onclick="event.stopPropagation();editEntity(\'' +e.id+ '\')" style="cursor:pointer;font-size:11px;color:var(--text4);padding:1px 4px" title="Edit">&#9998;</span>'+
+        '<span onclick="event.stopPropagation();deleteEntity(\'' +e.id+ '\')" style="cursor:pointer;font-size:11px;color:var(--text4);padding:1px 4px" title="Delete">&#10005;</span>'+
+      '</span>'+
+      '</div>';
+  }).join('');
+}
 
 
-Ran a command, read a file
-Ran a command, read a file
-Download that file, then when you're ready:
+function fps(){
+  var p=DB.projects;
+  if(ST.entity)p=p.filter(function(x){return x.entity===ST.entity;});
+  if(ST.fstat!=='all'&&ST.fstat!=='open'&&ST.fstat!=='done2')p=p.filter(function(x){return x.status===ST.fstat;});
+  if(ST.search)p=p.filter(function(x){return x.name.toLowerCase().indexOf(ST.search.toLowerCase())>-1;});
+  return p;
+}
 
-Step 2 — Upload to GitHub
+function getAttn(){
+  var r=[];
+  DB.projects.forEach(function(p){
+    if(isOD(p))r.push({type:'overdue',proj:p,sev:'high'});
+    else if(p.status==='risk')r.push({type:'risk',proj:p,sev:'high'});
+    else if(isDS(p))r.push({type:'soon',proj:p,sev:'med'});
+  });
+  return r;
+}
 
-Go to https://github.com/PsKev1962/Projectos
-Click on Concierge.html in the file list
-Click the pencil/edit icon → then the three dots → "Upload file" — or use Add file → Upload files
-Upload the new Concierge.html (make sure it keeps the capital C)
-Scroll down and click Commit changes
-Wait 1–2 minutes, then check the live URL. Ready to walk you through it when you are!
+function spill(s){
+  var m={active:'s-active',planning:'s-planning',hold:'s-hold',risk:'s-risk',done:'s-done'};
+  return '<span class="spill '+(m[s]||'s-done')+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>';
+}
+
+function renderDash(){
+  var p=fps();
+  var act=p.filter(function(x){return x.status==='active';}).length;
+  var attn=getAttn().length;
+  var ot=0;p.forEach(function(x){if(x.tasks)x.tasks.forEach(function(t){if(!t.done)ot++;});});
+  var html='<div class="page-header"><div><div class="page-title">Dashboard</div>'+
+    '<div class="page-subtitle">Synced to Google Sheets — shared across all devices</div>'+
+    '</div><button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button></div>';
+  html+='<div class="stat-grid">'+
+    '<div class="stat-card"><div class="stat-label">Total Projects</div><div class="stat-value">'+p.length+'</div><div class="stat-sub">'+DB.entities.length+' entities</div></div>'+
+    '<div class="stat-card green"><div class="stat-label">Active</div><div class="stat-value">'+act+'</div></div>'+
+    '<div class="stat-card'+(attn>0?' red':'')+'"><div class="stat-label">Needs Attention</div><div class="stat-value">'+attn+'</div><div class="stat-sub">'+(attn>0?'<span onclick="setView(\'attention\')" style="cursor:pointer;color:var(--red);font-weight:600">Review</span>':'All clear')+'</div></div>'+
+    '<div class="stat-card blue"><div class="stat-label">Open Tasks</div><div class="stat-value">'+ot+'</div></div></div>';
+  html+='<div class="section-header"><div class="section-title">Entity Overview</div></div>';
+  html+='<div class="entity-grid">'+DB.entities.map(function(e){
+    var ep=DB.projects.filter(function(x){return x.entity===e.id;});
+    var ac=ep.filter(function(x){return x.status==='active';}).length;
+    var tt=0,dn=0;ep.forEach(function(x){if(x.tasks){tt+=x.tasks.length;x.tasks.forEach(function(t){if(t.done)dn++;})}});
+    var pct=tt>0?Math.round(dn/tt*100):0;
+    var ms=[];ep.forEach(function(x){if(x.members)x.members.forEach(function(id){if(ms.indexOf(id)<0)ms.push(id);});});
+    return '<div class="ent-card" onclick="setEntity(\''+e.id+'\')">'+
+      '<div class="ent-hdr"><span class="ent-dot" style="background:'+e.color+'"></span><span class="ent-nm">'+h(e.name)+'</span></div>'+
+      '<div class="ent-mg"><div><div class="ent-ml">Projects</div><div class="ent-mv">'+ep.length+'</div></div>'+
+      '<div><div class="ent-ml">Active</div><div class="ent-mv" style="color:var(--green)">'+ac+'</div></div>'+
+      '<div><div class="ent-ml">Tasks</div><div class="ent-mv">'+dn+'/'+tt+'</div></div></div>'+
+      '<div class="ent-bw"><div class="ent-bf" style="width:'+pct+'%;background:'+e.color+'"></div></div>'+
+      '<div class="ent-pc">'+pct+'% complete</div>'+
+      '<div class="av-row">'+ms.slice(0,5).map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+'" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('')+'</div></div>';
+  }).join('')+'</div>';
+  html+='<div class="section-header"><div class="section-title">Recent Projects</div><span class="section-link" onclick="setView(\'projects\')">View all →</span></div>';
+  html+=projTable(p.slice(0,5));
+  return html;
+}
+
+function renderAttn(){
+  var items=getAttn();
+  var html='<div class="page-header"><div><div class="page-title">⚠ Needs Attention</div><div class="page-subtitle">'+items.length+' items</div></div></div>';
+  if(!items.length)return html+'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">All clear!</div></div>';
+  return html+'<div class="alert-list">'+items.map(function(item){
+    var p=item.proj;var e=ge(p.entity);
+    var lbl=item.type==='overdue'?'Overdue':item.type==='risk'?'At Risk':'Due Within 7 Days';
+    var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':'🟡';
+    return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
+      '<span class="alert-icon">'+ic+'</span>'+
+      '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+p.due:'')+'</div></div>'+
+      '<span class="alert-tag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
+  }).join('')+'</div>';
+}
+
+function renderProjs(){
+  var p=fps();
+  var html='<div class="page-header"><div><div class="page-title">All Projects</div><div class="page-subtitle">'+p.length+' projects</div></div>'+
+    '<button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button></div>';
+  html+='<div class="search-wrap"><span class="search-icon">🔍</span>'+
+    '<input class="search-input" id="proj-search" placeholder="Search projects..." oninput="ST.search=this.value;renderProjList()" value="'+h(ST.search)+'"></div>';
+  html+='<div class="task-filters">'+['all','active','planning','hold','risk','done'].map(function(s){
+    return '<button class="fb'+(ST.fstat===s?' active':'')+'" onclick="ST.fstat=\''+s+'\';renderAll()">'+s.charAt(0).toUpperCase()+s.slice(1)+'</button>';
+  }).join('')+'</div>';
+  html+='<div id="proj-table-wrap">'+(p.length?projTable(p):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>')+'</div>';
+  return html;
+}
+
+function renderProjList(){
+  var wrap=document.getElementById('proj-table-wrap');
+  if(!wrap){renderAll();return;}
+  var p=fps();
+  wrap.innerHTML=p.length?projTable(p):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>';
+  updateBadges();
+}
 
 
-Concierge
-Code · HTML 
+function projTable(projs){
+  if(!projs.length)return '<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects</div></div>';
+  var html='<div class="proj-table"><div class="proj-thead"><span>Project</span><span>Entity</span><span>Status</span><span>Priority</span><span>Lead</span><span>Progress</span><span></span></div>';
+  projs.forEach(function(p){
+    var e=ge(p.entity);var lm=gm(p.lead);
+    var tt=p.tasks?p.tasks.length:0;var dn=p.tasks?p.tasks.filter(function(t){return t.done;}).length:0;
+    html+='<div class="proj-row" onclick="selectProj(\''+p.id+'\')">'+
+      '<div><div class="pnm">'+(isOD(p)?'🔴 ':isDS(p)?'🟡 ':'')+h(p.name)+'</div><div class="psub">'+dn+'/'+tt+' tasks'+(p.due?' · '+p.due:'')+'</div></div>'+
+      '<div><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>'+
+      '<div>'+spill(p.status)+'</div>'+
+      '<div class="p'+p.priority+'">'+p.priority.toUpperCase()+'</div>'+
+      '<div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:'+lm.color+';width:22px;height:22px;font-size:8px">'+h(lm.initials)+'</div><span style="font-size:12px;color:var(--text2)">'+h(lm.name)+'</span></div>'+
+      '<div class="pw"><div class="pb"><div class="pbf" style="width:'+p.progress+'%"></div></div><span class="ppc">'+p.progress+'%</span></div>'+
+      '<div class="row-acts"><button class="delbtn" onclick="event.stopPropagation();delProj(\''+p.id+'\')" title="Delete">✕</button></div></div>';
+  });
+  return html+'</div>';
+}
 
-You've used 75% of your weekly limit
-Get more usage
-a
+function renderKanban(){
+  var p=fps();
+  var cols=[{id:'planning',l:'Planning',c:'var(--blue)'},{id:'active',l:'Active',c:'var(--green)'},{id:'hold',l:'On Hold',c:'var(--yellow)'},{id:'risk',l:'At Risk',c:'var(--red)'},{id:'done',l:'Done',c:'var(--text4)'}];
+  var html='<div class="page-header"><div class="page-title">Board View</div><button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button></div><div class="kanban-board">';
+  cols.forEach(function(col){
+    var cards=p.filter(function(x){return x.status===col.id;});
+    html+='<div class="kcol"><div class="kcol-hdr"><span style="color:'+col.c+';font-size:8px">●</span><span class="kcol-title" style="color:'+col.c+'">'+col.l+'</span><span class="kcol-cnt">'+cards.length+'</span></div><div class="kcol-cards">';
+    if(!cards.length)html+='<div style="text-align:center;padding:20px;color:var(--text4);font-size:12px">No projects</div>';
+    cards.forEach(function(x){
+      var e=ge(x.entity);var lm=gm(x.lead);
+      html+='<div class="kcard" onclick="selectProj(\''+x.id+'\')">'+
+        '<div class="kcard-title">'+h(x.name)+'</div>'+
+        '<div class="kcard-meta"><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
+        '<div class="av" style="background:'+lm.color+';width:20px;height:20px;font-size:8px">'+h(lm.initials)+'</div>'+
+        '<span style="font-size:11px;color:var(--text4)">'+x.progress+'%</span></div>'+
+        '<div class="kcard-prog"><div class="kcard-pf" style="width:'+x.progress+'%"></div></div></div>';
+    });
+    html+='</div></div>';
+  });
+  return html+'</div>';
+}
+
+function renderGantt(){
+  var p=fps();
+  var html='<div class="page-header"><div class="page-title">Timeline</div></div><div style="overflow-x:auto">'+
+    '<table style="min-width:700px;border-collapse:collapse;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)">'+
+    '<thead><tr style="background:var(--bg3)"><th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Project</th>'+
+    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Entity</th>'+
+    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Status</th>'+
+    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Due</th>'+
+    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left;width:220px">Progress</th></tr></thead><tbody>';
+  p.forEach(function(x){
+    var e=ge(x.entity);
+    html+='<tr style="cursor:pointer;border-top:1px solid var(--border)" onclick="selectProj(\''+x.id+'\')" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
+      '<td style="padding:10px 12px;font-size:13px;font-weight:600">'+h(x.name)+'</td>'+
+      '<td style="padding:10px 12px"><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.name)+'</span></td>'+
+      '<td style="padding:10px 12px">'+spill(x.status)+'</td>'+
+      '<td style="padding:10px 12px;font-size:12px;color:var(--text3)">'+(x.due||'—')+'</td>'+
+      '<td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px">'+
+        '<div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden"><div style="width:'+x.progress+'%;height:100%;background:'+e.color+';border-radius:4px"></div></div>'+
+        '<span style="font-size:11px;color:var(--text4);white-space:nowrap">'+x.progress+'%</span></div></td></tr>';
+  });
+  return html+'</tbody></table></div>';
+}
+
+function renderTasks(){
+  var all=[];
+  fps().forEach(function(p){if(p.tasks)p.tasks.forEach(function(t){all.push({task:t,proj:p});});});
+  var shown=all;
+  if(ST.fstat==='open')shown=all.filter(function(x){return !x.task.done;});
+  if(ST.fstat==='done2')shown=all.filter(function(x){return x.task.done;});
+  var html='<div class="page-header"><div class="page-title">All Tasks</div></div>'+
+    '<div class="task-filters">'+
+    '<button class="fb'+(ST.fstat==='all'?' active':'')+'" onclick="ST.fstat=\'all\';renderAll()">All</button>'+
+    '<button class="fb'+(ST.fstat==='open'?' active':'')+'" onclick="ST.fstat=\'open\';renderAll()">Open</button>'+
+    '<button class="fb'+(ST.fstat==='done2'?' active':'')+'" onclick="ST.fstat=\'done2\';renderAll()">Done</button></div>';
+  if(!shown.length)return html+'<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-text">No tasks</div></div>';
+  return html+'<div class="task-list">'+shown.map(function(x){
+    var t=x.task;var p=x.proj;var e=ge(p.entity);
+    return '<div class="task-row" onclick="selectProj(\''+p.id+'\')">'+
+      '<div class="tck'+(t.done?' done':'')+'" onclick="event.stopPropagation();toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
+      '<span class="ttx'+(t.done?' done':'')+'">'+h(t.title)+'</span>'+
+      '<span class="tcat">'+h(t.cat||'')+'</span>'+
+      '<span style="font-size:11px;color:var(--text4)">'+h(p.name)+'</span>'+
+      '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
+  }).join('')+'</div>';
+}
+
+function renderTeam(){
+  var html='<div class="page-header"><div class="page-title">Team Members</div><button class="tb-btn tb-btn-accent" onclick="openNewMember()">+ Add Member</button></div>';
+  if(!DB.members.length)return html+'<div class="empty-state"><div class="empty-icon">&#128101;</div><div class="empty-text">No team members yet</div></div>';
+  return html+'<div class="team-grid">'+DB.members.map(function(m){
+    var ps=DB.projects.filter(function(p){return p.members&&p.members.indexOf(m.id)>-1;});
+    var ot=0;ps.forEach(function(p){if(p.tasks)p.tasks.forEach(function(t){if(!t.done&&t.assign===m.id)ot++;});});
+    var entities=m.entities||[m.entity];
+    var entNames=entities.map(function(id){return ge(id).name;}).join(', ');
+    var dotColor=(ge(entities[0]||'').color)||'#888';
+    var editBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px" onclick="editMember(\'' +m.id+ '\')">&#9998; Edit</button>';
+    var delBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteMember(\'' +m.id+ '\')">&#10005;</button>';
+    return '<div class="mem-card">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
+        '<div class="mem-av" style="background:'+m.color+'">'+h(m.initials)+'</div>'+
+        '<div style="display:flex;gap:6px">'+editBtn+delBtn+'</div>'+
+      '</div>'+
+      '<div class="mem-nm">'+h(m.name)+'</div>'+
+      '<div class="mem-em">'+h(m.email)+'</div>'+
+      '<div style="font-size:11px;margin-top:2px;color:'+dotColor+'">'+h(entNames)+'</div>'+
+      '<div class="mem-stats">'+
+        '<div class="mst"><div class="mst-v">'+ps.length+'</div><div class="mst-l">Projects</div></div>'+
+        '<div class="mst"><div class="mst-v">'+ot+'</div><div class="mst-l">Open Tasks</div></div>'+
+      '</div></div>';
+  }).join('')+'</div>';
+}
 
 
+function editMember(id){
+  var m=DB.members.find(function(x){return x.id===id;});if(!m)return;
+  var eoCBs=DB.entities.map(function(e){
+    var checked=(m.entities||[m.entity]).indexOf(e.id)>-1;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px">'+
+      '<input type="checkbox" class="nm-ent-cb" value="'+e.id+'"'+(checked?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)">'+
+      '<span style="background:'+e.color+';width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">'+h(e.short)+'</span>'+
+      h(e.name)+'</label>';
+  }).join('');
+  var colOpts=COLORS.map(function(c){
+    return '<div class="co'+(m.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'" onclick="pickColData(this)"></div>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Edit Team Member';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" value="'+h(m.name)+'"></div>'+
+    '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" value="'+h(m.email)+'"></div>'+
+    '<div class="fr"><label class="fl">Entities</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
+  window._col=m.color;
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('nm-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    var cbs=document.querySelectorAll('.nm-ent-cb:checked');
+    var entities=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    if(!entities.length){alert('Please select at least one entity.');return;}
+    var ini=nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    m.name=nm;m.email=document.getElementById('nm-em').value.trim();
+    m.entities=entities;m.entity=entities[0];
+    m.color=window._col||m.color;m.initials=ini;
+    closeModal();mutate();toast('Member updated','ok');
+  };
+  showModal();
+}
 
-Claude is AI and can make mistakes. Please double-check responses.
+function deleteMember(id){
+  var m=DB.members.find(function(x){return x.id===id;});if(!m)return;
+  if(!confirm('Delete '+m.name+'? This cannot be undone.'))return;
+  DB.members=DB.members.filter(function(x){return x.id!==id;});
+  mutate();toast('Member deleted','ok');
+}
+
+function editEntity(id){
+  var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
+  var colOpts=COLORS.map(function(c){
+    return '<div class="co'+(e.color===c?' sel':'')+'" style="background:'+c+'" data-c="'+c+'" onclick="pickColData(this)"></div>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Edit Entity';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Entity Name *</label><input class="fi" id="ne-nm" value="'+h(e.name)+'"></div>'+
+    '<div class="fr"><label class="fl">Short Code (2-3 letters)</label><input class="fi" id="ne-sh" value="'+h(e.short)+'" maxlength="3" style="text-transform:uppercase"></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
+  window._col=e.color;
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('ne-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    e.name=nm;
+    e.short=(document.getElementById('ne-sh').value.trim().toUpperCase()||nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase());
+    e.color=window._col||e.color;
+    closeModal();mutate();toast('Entity updated','ok');
+  };
+  showModal();
+}
+
+function deleteEntity(id){
+  var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
+  var projCount=DB.projects.filter(function(p){return p.entity===id;}).length;
+  if(projCount>0){alert('Cannot delete — this entity has '+projCount+' project(s). Reassign or delete them first.');return;}
+  if(!confirm('Delete '+e.name+'?'))return;
+  DB.entities=DB.entities.filter(function(x){return x.id!==id;});
+  mutate();toast('Entity deleted','ok');
+}
+
+function pickColData(el){
+  window._col=el.getAttribute('data-c');
+  document.querySelectorAll('.co').forEach(function(d){d.classList.remove('sel');});
+  el.classList.add('sel');
+}
 
 
-raw
-Concierge · HTML
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>Concierge Command Centre</title>  
-<style>  
-:root{--bg:#f4f5f7;--surface:#fff;--surface2:#f0f1f3;--border:#dde0e5;--border2:#c8ccd3;--text:#1a1d23;--text2:#4a5060;--text3:#7a8090;--text4:#a0a8b5;--red:#ee1c25;--green:#2C5F2E;--purple:#7B4F9E;--gold:#b8860b;}  
-*{box-sizing:border-box;margin:0;padding:0;}  
-body{background:#f4f5f7;font-family:Georgia,'Times New Roman',serif;color:#1a1d23;}  
-button,input,textarea,select{font-family:inherit;}  
-::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:#f4f5f7;}::-webkit-scrollbar-thumb{background:#c8ccd3;border-radius:3px;}  
-header,footer,nav,.Header,.Footer,.Mobile-bar,.Mobile-overlay,.site-header,.site-footer,.header-nav,.footer-nav,.sqs-announcement-bar,.mobile-overlay-nav,.burger-inner,.hamburger,.top-bun,.bottom-bun,[data-section-type="header"],[data-section-type="footer"],.page-section,[data-section-type],.sections,.content-wrapper{display:none!important;height:0!important;overflow:hidden!important;background:none!important;}  
-html,body{margin:0!important;padding:0!important;background:#f4f5f7!important;background-image:none!important;}  
-.sqs-layout,.sqs-row,.sqs-col-12,.sqs-block,.sqs-block-content,[data-layout-label]{padding:0!important;margin:0!important;max-width:100%!important;width:100%!important;}  
-body>*:not(#ccc-root):not(style):not(script){background-image:none!important;background-color:transparent!important;}  
-#ccc-root{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;background:#f4f5f7;overflow-y:auto;isolation:isolate;}  
-#ccc-root::before{content:'';position:fixed;inset:0;background:#f4f5f7;z-index:-1;pointer-events:none;}  
-body.sqs-edit-mode-active #ccc-root{position:relative!important;min-height:500px;border:2px dashed #ee1c25;}  
-.pin-wrap{width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;}  
-.pin-box{background:#fff;border:1px solid #dde0e5;border-radius:16px;padding:44px 40px;width:340px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08);}  
-.pin-ey{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#a0a8b5;margin-bottom:8px;}  
-.pin-h{font-size:22px;font-weight:bold;color:#ee1c25;margin-bottom:6px;}  
-.pin-s{font-size:12px;color:#a0a8b5;margin-bottom:28px;}  
-.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:24px;}  
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #c8ccd3;background:transparent;transition:all 0.2s;}  
-.pin-dot.on{background:#ee1c25;border-color:#ee1c25;}  
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}  
-.pin-key{padding:16px;border-radius:10px;border:1px solid #dde0e5;background:#f8f9fb;color:#1a1d23;cursor:pointer;font-size:18px;font-weight:bold;transition:all 0.15s;}  
-.pin-key:hover{background:#e8e9ec;border-color:#ee1c25;}  
-.pin-err{color:#cc2222;font-size:12px;height:18px;margin-top:4px;}  
-.si-wrap{width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;}  
-.si-box{background:#fff;border:1px solid #dde0e5;border-radius:16px;padding:40px;width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08);}  
-.si-ey{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#a0a8b5;margin-bottom:8px;}  
-.si-h{font-size:22px;font-weight:bold;color:#ee1c25;margin-bottom:6px;}  
-.si-s{font-size:12px;color:#a0a8b5;margin-bottom:24px;}  
-.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}  
-.vbtn{padding:12px;border-radius:10px;border:1px solid #dde0e5;background:#f4f5f7;color:#1a1d23;cursor:pointer;font-size:13px;transition:all 0.2s;}  
-.vbtn:hover{border-color:#ee1c25;color:#ee1c25;}  
-.si-or{color:#a0a8b5;font-size:11px;margin:12px 0;}  
-.si-row{display:flex;gap:8px;}  
-.si-row input{flex:1;padding:10px 12px;background:#fff;border:1px solid #c8ccd3;border-radius:8px;color:#1a1d23;font-size:13px;outline:none;}  
-.si-row button{padding:10px 16px;background:#ee1c25;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;}  
-.ld-wrap{width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}  
-.spinner{width:32px;height:32px;border:3px solid #dde0e5;border-top-color:#ee1c25;border-radius:50%;animation:spin 0.8s linear infinite;}  
-@keyframes spin{to{transform:rotate(360deg);}}  
-#app-wrap{display:flex;flex-direction:column;width:100%;min-height:100vh;}  
-#hdr{background:#fff;border-bottom:1px solid #dde0e5;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100;}  
-#bdy{display:flex;flex-direction:row;width:100%;align-items:flex-start;}  
-#sb{width:230px;min-width:230px;background:#fff;border-right:1px solid #dde0e5;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:57px;max-height:calc(100vh - 57px);overflow-y:auto;}  
-#mn{flex:1;padding:20px 24px;min-width:0;}  
-.app-ey{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#a0a8b5;margin-bottom:1px;}  
-.app-ti{font-size:16px;font-weight:bold;}  
-.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}  
-.ntab{padding:6px 12px;border-radius:16px;border:1px solid #c8ccd3;cursor:pointer;font-size:11px;background:#f4f5f7;color:#7a8090;transition:all 0.2s;}  
-.ntab.active{background:#ee1c25;color:#fff;border-color:#ee1c25;}  
-.sync-btn{padding:6px 12px;background:transparent;border:1px solid #2C5F2E;border-radius:8px;color:#2C5F2E;cursor:pointer;font-size:11px;}  
-.eod-btn{padding:6px 12px;background:transparent;border:1px solid #b8860b;border-radius:8px;color:#b8860b;cursor:pointer;font-size:11px;}  
-.usr-btn{display:flex;align-items:center;gap:6px;padding:5px 10px;background:#f4f5f7;border:1px solid #dde0e5;border-radius:20px;font-size:11px;color:#7a8090;cursor:pointer;}  
-.usr-btn strong{color:#1a1d23;}  
-.sb-sec{padding:12px 10px 4px;font-size:10px;letter-spacing:2px;color:#7a8090;text-transform:uppercase;font-weight:bold;}  
-.sb-search{padding:8px;border-bottom:1px solid #eee;position:relative;}  
-.sb-search input{width:100%;background:#f8f9fb;border:1px solid #c8ccd3;border-radius:7px;padding:7px 10px;color:#1a1d23;font-size:12px;outline:none;}  
-.sr-drop{background:#fff;border:1px solid #c8ccd3;border-radius:8px;margin-top:4px;overflow:hidden;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.1);}  
-.sr-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #eee;font-size:12px;}  
-.sr-item:hover{background:#f0f4ff;}  
-.sr-item:last-child{border-bottom:none;}  
-.sr-sub{font-size:10px;color:#7a8090;margin-top:2px;}  
-.bbtn{display:flex;align-items:center;gap:8px;padding:7px 10px;margin:1px 4px;border-radius:8px;border:none;cursor:pointer;background:transparent;text-align:left;width:calc(100% - 8px);transition:all 0.15s;border-left:3px solid transparent;overflow:hidden;}  
-.bdot{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:bold;color:#fff;flex-shrink:0;}  
-.bname{font-size:12px;color:#4a5060;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}  
-.bbtn.active .bname{color:#1a1d23;font-weight:bold;}  
-.sbtn{display:flex;align-items:flex-start;padding:6px 10px;margin:1px 4px;border-radius:6px;border:none;cursor:pointer;background:transparent;text-align:left;width:calc(100% - 8px);transition:all 0.15s;border-left:3px solid transparent;}  
-.stitle{font-size:11px;color:#7a8090;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}  
-.sbtn.active .stitle{color:#1a1d23;font-weight:bold;}  
-.scat{font-size:9px;color:#a0a8b5;margin-top:1px;}  
-.add-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:1px 4px;border-radius:6px;border:1px dashed #c8ccd3;cursor:pointer;background:transparent;color:#7a8090;font-size:11px;width:calc(100% - 8px);}  
-.card{background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:14px;border:1px solid #dde0e5;box-shadow:0 1px 3px rgba(0,0,0,0.05);}  
-.clabel{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7a8090;margin-bottom:10px;display:block;font-weight:bold;}  
-.flabel{font-size:11px;color:#7a8090;margin-bottom:5px;}  
-.inp{width:100%;background:#fff;border:1px solid #c8ccd3;border-radius:7px;padding:9px 12px;color:#1a1d23;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;}  
-.inp:focus{border-color:#ee1c25;box-shadow:0 0 0 2px rgba(238,28,37,0.1);}  
-.ta{resize:vertical;line-height:1.7;}  
-.sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23666' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;}  
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-family:inherit;transition:all 0.2s;}  
-.btn-p{color:#fff;}  
-.btn-o{background:transparent;border:1px solid;}  
-.btn-sm{padding:5px 11px;font-size:11px;}  
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}  
-.fg{margin-bottom:12px;}  
-.pas-alert{background:#fff0f0;border:1px solid #ffaaaa;border-radius:10px;padding:12px 15px;margin-bottom:14px;display:flex;gap:10px;}  
-.pas-t{font-weight:bold;color:#cc2222;font-size:13px;}  
-.pas-s{font-size:11px;color:#994444;margin-top:2px;}  
-.rate-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0f1f3;border-radius:8px;margin-bottom:14px;border:1px solid #dde0e5;}  
-.rate-lbl{font-size:11px;color:#4a5060;flex:1;}  
-.rate-btn{padding:5px 12px;border-radius:6px;border:1px solid #c8ccd3;background:#fff;cursor:pointer;font-size:12px;transition:all 0.15s;}  
-.rate-btn.up.on{background:#e6f4e6;border-color:#2C5F2E;color:#2C5F2E;}  
-.rate-btn.dn.on{background:#fce8e8;border-color:#cc2222;color:#cc2222;}  
-.lang-bar{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:14px;flex-wrap:wrap;}  
-.lang-btn{padding:4px 10px;border-radius:12px;border:1px solid #c8ccd3;background:#fff;color:#4a5060;cursor:pointer;font-size:11px;}  
-.lang-btn.active{background:#ee1c25;border-color:#ee1c25;color:#fff;}  
-.sms-box{background:#f8f9fb;border-radius:10px;padding:14px;margin-top:10px;border:1px solid #dde0e5;}  
-.sms-text{font-size:13px;color:#4a5060;line-height:1.7;white-space:pre-wrap;}  
-.hi-item{padding:10px 14px;background:#fff;border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid #dde0e5;transition:all 0.15s;}  
-.hi-item:hover{border-color:#ee1c25;}  
-.slist{list-style:none;}  
-.sitem{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;}  
-.sitem:last-child{border-bottom:none;}  
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999;}  
-.modal{background:#fff;border:1px solid #c8ccd3;border-radius:14px;padding:28px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.15);}  
-.modal-t{font-size:16px;font-weight:bold;margin-bottom:20px;}  
-.modal-act{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}  
-.hidden{display:none!important;}  
-</style>  
-</head>  
-<body>  
-<div id="ccc-root">  
-  
-<div id="pin-wrap" class="pin-wrap">  
- <div class="pin-box">  
- <div class="pin-ey">People of The Way</div>  
- <div class="pin-h">Concierge Command Centre</div>  
- <div class="pin-s">Enter your team PIN to continue</div>  
- <div class="pin-dots">  
- <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>  
- <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>  
- </div>  
- <div class="pin-pad">  
- <button class="pin-key" onclick="pp('1')">1</button>  
- <button class="pin-key" onclick="pp('2')">2</button>  
- <button class="pin-key" onclick="pp('3')">3</button>  
- <button class="pin-key" onclick="pp('4')">4</button>  
- <button class="pin-key" onclick="pp('5')">5</button>  
- <button class="pin-key" onclick="pp('6')">6</button>  
- <button class="pin-key" onclick="pp('7')">7</button>  
- <button class="pin-key" onclick="pp('8')">8</button>  
- <button class="pin-key" onclick="pp('9')">9</button>  
- <button class="pin-key" style="font-size:11px;color:#7a8090;" onclick="pclr()">Clear</button>  
- <button class="pin-key" onclick="pp('0')">0</button>  
- <button class="pin-key" style="font-size:11px;color:#7a8090;" onclick="pbk()">Del</button>  
- </div>  
- <div class="pin-err" id="pin-err"></div>  
- </div>  
-</div>  
-  
-<div id="ld-wrap" class="ld-wrap hidden">  
- <div class="spinner"></div>  
- <div style="font-size:13px;color:#7a8090;">Loading scripts from Drive...</div>  
-</div>  
-  
-<div id="si-wrap" class="si-wrap hidden">  
- <div class="si-box">  
- <div class="si-ey">People of The Way</div>  
- <div class="si-h">Concierge Command Centre</div>  
- <div class="si-s">Who is on reception today?</div>  
- <div class="vgrid" id="vgrid"></div>  
- <div class="si-or">or type your name</div>  
- <div class="si-row">  
- <input type="text" id="si-inp" placeholder="Your name..." />  
- <button onclick="signIn(document.getElementById('si-inp').value)">Start</button>  
- </div>  
- </div>  
-</div>  
-  
-<div id="app-wrap" class="hidden">  
- <div id="hdr">  
- <div>  
- <div class="app-ey">People of The Way</div>  
- <div class="app-ti" id="app-ti" style="color:#ee1c25;">Concierge Command Centre</div>  
- </div>  
- <div class="hdr-r">  
- <div style="display:flex;gap:4px;">  
- <button class="ntab active" id="tb-scripts" onclick="ST('scripts')">Scripts</button>  
- <button class="ntab" id="tb-log" onclick="ST('log')">Log Call</button>  
- <button class="ntab" id="tb-history" onclick="ST('history')">History</button>  
- <button class="ntab" id="tb-quicksend" onclick="ST('quicksend')">Send Link</button>  
- <button class="ntab" id="tb-settings" onclick="ST('settings')">Settings</button>  
- </div>  
- <button class="sync-btn" onclick="syncDrive()">Save to Drive</button>  
- <button class="eod-btn" onclick="endOfDay()">End of Day</button>  
- <div class="usr-btn" onclick="signOut()"><span>On duty:</span><strong id="usr-name">-</strong></div>  
- </div>  
- </div>  
- <div id="bdy">  
- <div id="sb">  
- <div class="sb-search">  
- <input id="srch-inp" placeholder="Search scripts..." oninput="doSearch(this.value)" />  
- <div class="sr-drop" id="sr-drop"></div>  
- </div>  
- <div class="sb-sec">Brands</div>  
- <div id="brand-list"></div>  
- <button class="add-btn" onclick="showMod('mod-brand')">+ Add Brand</button>  
- <div class="sb-sec" style="margin-top:8px;">Scripts</div>  
- <div id="script-list"></div>  
- <button class="add-btn" onclick="addScript()">+ Add Script</button>  
- </div>  
- <div id="mn">  
- <div id="pn-scripts"><div id="script-view" style="width:100%;"></div></div>  
- <div id="pn-log" class="hidden"></div>  
- <div id="pn-history" class="hidden"></div>  
- <div id="pn-quicksend" class="hidden"></div>  
- <div id="pn-settings" class="hidden"></div>  
- </div>  
- </div>  
-</div>  
-  
-<div class="modal-ov hidden" id="mod-brand">  
- <div class="modal">  
- <div class="modal-t">Add New Brand</div>  
- <div class="fg"><div class="flabel">Brand Name</div><input class="inp" id="mb-name" placeholder="e.g. ManUp, Angel Tree..." /></div>  
- <div class="fg"><div class="flabel">Brand Colour</div>  
- <div style="display:flex;gap:10px;align-items:center;">  
- <input type="color" id="mb-col" value="#3366cc" style="width:44px;height:36px;border-radius:6px;border:1px solid #dde0e5;cursor:pointer;" oninput="document.getElementById('mb-hex').value=this.value;" />  
- <input class="inp" id="mb-hex" value="#3366cc" style="width:120px;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('mb-col').value=this.value;" />  
- </div>  
- </div>  
- <div class="modal-act">  
- <button class="btn btn-o btn-sm" style="border-color:#c8ccd3;color:#7a8090;" onclick="hideMod('mod-brand')">Cancel</button>  
- <button class="btn btn-p btn-sm" style="background:#ee1c25;" onclick="submitBrand()">Add Brand</button>  
- </div>  
- </div>  
-</div>  
-  
-<div class="modal-ov hidden" id="mod-script">  
- <div class="modal">  
- <div class="modal-t" id="mod-sc-t">Edit Script</div>  
- <div class="fgrid">  
- <div><div class="flabel">Title</div><input class="inp" id="es-title" placeholder="Script title" /></div>  
- <div><div class="flabel">Category</div><input class="inp" id="es-cat" placeholder="e.g. General Info" /></div>  
- </div>  
- <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#4a5060;"><input type="checkbox" id="es-pas" style="accent-color:#ff4444;" /> Flag as Pastoral / Welfare</label></div>  
- <div class="fg"><div class="flabel">Key Info Points</div><div id="ki-list"></div><button class="btn btn-o btn-sm" style="border-color:#c8ccd3;color:#7a8090;margin-top:6px;" onclick="addKI()">+ Add point</button></div>  
- <div class="fg"><div class="flabel">Suggested Script</div><textarea class="inp ta" id="es-script" rows="5" placeholder="Word-for-word script..."></textarea></div>  
- <div id="es-trans-fields"></div>  
- <div class="fg"><div class="flabel">Escalate To</div><input class="inp" id="es-esc" placeholder="e.g. Ps Kev / Venue Manager" /></div>  
- <div class="fg"><div class="flabel">SMS / WhatsApp Template</div><textarea class="inp ta" id="es-sms" rows="2" placeholder="Short follow-up text message..."></textarea></div>  
- <div class="fg"><div class="flabel">Team Notes (internal)</div><textarea class="inp ta" id="es-notes" rows="2"></textarea></div>  
- <div class="modal-act">  
- <button class="btn btn-sm" style="background:transparent;border:none;color:#cc3333;cursor:pointer;margin-right:auto;" onclick="delScript()">Delete</button>  
- <button class="btn btn-o btn-sm" style="border-color:#c8ccd3;color:#7a8090;" onclick="hideMod('mod-script')">Cancel</button>  
- <button class="btn btn-p btn-sm" style="background:#ee1c25;" onclick="saveScript()">Save Script</button>  
- </div>  
- </div>  
-</div>  
-  
-<div class="modal-ov hidden" id="mod-history">  
- <div class="modal">  
- <div class="modal-t" id="hist-t">Call Details</div>  
- <div id="hist-body"></div>  
- <div class="modal-act"><button class="btn btn-o btn-sm" style="border-color:#c8ccd3;color:#7a8090;" onclick="hideMod('mod-history')">Close</button></div>  
- </div>  
-</div>  
-  
-<div class="modal-ov hidden" id="mod-addlink">  
- <div class="modal">  
- <div class="modal-t">Add Quick Send Link</div>  
- <div class="fg"><div class="flabel">Label</div><input class="inp" id="al-lbl" placeholder="e.g. Sunday Service Info" /></div>  
- <div class="fg"><div class="flabel">URL</div><input class="inp" id="al-url" placeholder="https://ourchurch.org.au/visit" /></div>  
- <div class="fg"><div class="flabel">Description</div><input class="inp" id="al-desc" placeholder="Brief description for the email" /></div>  
- <div class="fg"><div class="flabel">Brand</div>  
- <select class="inp sel" id="al-brand">  
- <option value="ourchurch">OurChurch</option>  
- <option value="lovethecity">Love This City</option>  
- <option value="junction">The Junction</option>  
- <option value="heavenscent">HeavenScentMe</option>  
- <option value="other">Other</option>  
- </select>  
- </div>  
- <div class="modal-act">  
- <button class="btn btn-o btn-sm" style="border-color:#c8ccd3;color:#7a8090;" onclick="hideMod('mod-addlink')">Cancel</button>  
- <button class="btn btn-p btn-sm" style="background:#ee1c25;" onclick="addQuickLink()">Add Link</button>  
- </div>  
- </div>  
-</div>  
-  
-</div>  
-  
-<script>  
-var PIN="1962";  
-var DRIVE_URL="https://script.google.com/macros/s/AKfycbwsKYYa4Z9A7blcGzhl3PFIRKWv-VUqVvBgawDzAz3oVt4I9uQtfKmN0HzcW9GaZuWZ5A/exec";  
-var LOG_URL="https://script.google.com/macros/s/AKfycbzPeKRVldKGweWcsQvKJ57bBZVqVdNwCbjHTexpUgNJeVZGSdkn2b0F_pThnMlBVnZeDw/exec";  
-var DB={ourchurch:{name:"OurChurch",short:"OC",accent:"#ee1c25"},lovethecity:{name:"Love This City",short:"LTC",accent:"#ee1c25"},junction:{name:"The Junction",short:"TJ",accent:"#2C5F2E"},heavenscent:{name:"HeavenScentMe",short:"HS",accent:"#7B4F9E"}};  
-var DT=[{name:"Anita Rossow",email:"arossow@ourchurch.org.au"},{name:"Wendy Markham",email:"wmarkham@ourchurch.org.au"},{name:"Ruth Arnold",email:"rarnold@ourchurch.org.au"},{name:"Meagan Greenway",email:"mgreenway@ourchurch.org.au"},{name:"Admin",email:"admin@ourchurch.org.au"}];  
-var DV=["Robyn Workman","Deborah Randal","Wendy Markham","Mary Nash"];  
-var DS=[  
-{id:"oc-gen",bId:"ourchurch",cat:"General Info",title:"What is OurChurch?",ki:["Legal entity: Christian Community Church Ltd (ACN 152 615 300)","People of The Way - New Covenant community","Phase 2 (2021-2031): Momentum and multiplication","Sunday Family Gathering + IMVs + LivingMission","Mixed audience - no assumed church background"],script:"Thanks so much for reaching out! OurChurch is a church community based on the Gold Coast at Burleigh Heads. We gather on Sundays and are all about helping people connect with God and each other in a real, no-pressure way. Whether you have been going to church your whole life or never stepped foot in one - you are genuinely welcome here. Is there something specific you were hoping to find out about?",esc:"Host team / pastor for first-time visitor follow-up",sms:"Hi [Name], great chatting with you! OurChurch gathers Sundays at Burleigh Heads - you are so welcome to come along. Any questions just reply. God bless!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-ven",bId:"ourchurch",cat:"Venue Hire",title:"Venue Hire Enquiry",ki:["OurChurch gathering space NOT available for general hire","Refer ALL venue hire to The Junction GC (thejunctiongc.com)","Internal ministry use: check with ops team first"],script:"Thanks for your enquiry! Our main gathering space is not available for general hire, but our sister venue The Junction at Burleigh Heads is a fantastic community space for events, meetings, and workshops. Shall I connect you with The Junction team?",esc:"Redirect to The Junction enquiry team",sms:"Hi [Name], thanks for your interest! The Junction at Burleigh Heads is the perfect venue. Our team will be in touch shortly.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-vol",bId:"ourchurch",cat:"Volunteering",title:"Volunteering at OurChurch",ki:["Teams: Welcome/Host, Production (AV/Tech), Kids, Youth, Setup","Rostered via ChurchSuite - expression of interest first","Kids/Youth roles require Blue Card","Best first step: come along to a Sunday"],script:"That is brilliant - we would love to have you involved! OurChurch runs on an incredible team of volunteers across welcoming guests, kids and youth, tech and production, and setup. Best first step is to come along to a Sunday and let us know which area interests you most. What are you most drawn to?",esc:"Volunteer coordinator / relevant team leader",sms:"Hi [Name], so great you want to get involved at OurChurch! Come along this Sunday and we will connect you with the right team leader.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-pas",bId:"ourchurch",cat:"Pastoral / Welfare",title:"Pastoral or Welfare Support",ki:["PRIORITY - approach with warmth, never rush","Do NOT give advice - warm handoff only","Crisis: Lifeline 13 11 14 | Beyond Blue 1300 22 4636","Escalate immediately - do not handle alone"],script:"Thank you so much for reaching out - it genuinely takes courage and we are really glad you did. I want to make sure you get the right support. Can I connect you with one of our pastoral team? They are warm, confidential, and they genuinely care. Are you okay if I pass your details on so someone can reach out personally?",esc:"PRIORITY - Pastoral team / Ps Kev immediately",sms:"",notes:"NEVER try to counsel. Warm handoff only.",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-evt",bId:"ourchurch",cat:"Events and Tickets",title:"Events and Tickets",ki:["Sunday services: FREE - no ticket needed","Special events: check ourchurch.org.au","Ticketed via Humanitix or EventBrite","Group bookings: contact events coordinator"],script:"Our regular Sunday services are completely free - just show up, no registration needed. For special events, tickets are usually available at ourchurch.org.au. Is there a specific event you are looking for?",esc:"Events coordinator for special events / group bookings",sms:"Hi [Name], you can find all our upcoming events and ticket links at ourchurch.org.au. Let us know if you need help!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-giv",bId:"ourchurch",cat:"Donations and Giving",title:"Donations and Giving",ki:["Online giving: ourchurch.org.au/give","OurChurch is NOT a DGR - not tax deductible","Tax-deductible donations go to Love This City (PBI/DGR)","Large gifts: connect with director"],script:"Thank you - that is so generous! You can give online at ourchurch.org.au/give or via bank transfer. Just worth knowing: if a tax-deductible receipt matters to you, that would be through our charitable arm Love This City - they are a registered DGR. Would that be relevant?",esc:"Finance team for large gifts or estate giving",sms:"Hi [Name], thank you for your generosity! You can give at ourchurch.org.au/give. For tax-deductible giving visit lovethiscity.org.au/give. God bless!",notes:"OurChurch is NOT tax deductible. Always clarify.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-vis",bId:"ourchurch",cat:"Visitor Welcome",title:"First-Time Visitor - What to Expect",ki:["Sunday gatherings at Burleigh Heads","Casual, welcoming - no dress code, no pressure","Kids program (OurKids) runs during the main service","Parking on site / nearby street parking","Service runs approx. 75 minutes"],script:"Welcome - so glad you called! Our Sunday gatherings are pretty relaxed - there is no dress code, no pressure to do anything, and you won't be asked to stand up or introduce yourself. We meet at Burleigh Heads and it runs about 75 minutes. If you have got kids, there is a great program running at the same time so you can actually enjoy the service. The best thing to do is just come along and see how you feel. Can I send you a link with everything you need to know before your first visit?",esc:"Host team for first-time visitor follow-up",sms:"Hi [Name], so glad you are thinking of visiting! Here is everything you need: ourchurch.org.au/visit - we would love to meet you on Sunday. God bless!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-con",bId:"ourchurch",cat:"Discipleship / Belonging",title:"Membership and Getting Connected",ki:["OurChurch uses a belonging before believing approach","No formal membership programme - connection happens through IMVs and LivingMission","First step: Connect Card or chat with someone at the Welcome Hub","No pressure timeline - everyone moves at their own pace"],script:"Connecting at OurChurch is pretty organic - we do not have a formal membership sign-up, but there are real ways to go deeper. The main thing is finding your people, and for most folks that happens through one of our smaller community groups called IMVs. It is a chance to do life together beyond Sunday. Would you like me to connect you with someone who can tell you more about what is available right now?",esc:"Connections pastor / IMV coordinator",sms:"Hi [Name], great to hear you want to go deeper! Someone from our connections team will be in touch soon - we cannot wait to help you find your place.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-kid",bId:"ourchurch",cat:"Family and Next Gen",title:"Kids and Youth Ministry",ki:["OurKids: runs during Sunday service - birth through to primary school","OurYouth: mid-week and Sunday youth expression (high school age)","All volunteers are screened and trained - Working With Children Checks in place","Enquiries about specific programs: connect with the Next Gen team"],script:"We love families! OurKids runs at the same time as our Sunday gathering so parents can be fully present in the service. It is a safe, fun environment - all our volunteers are WWC-checked and trained. For older kids and teens we have OurYouth which meets mid-week as well. Would you like me to get someone from our Next Gen team to give you more details?",esc:"Next Gen / Youth team lead",sms:"Hi [Name], thanks for asking about our kids and youth programs! Our Next Gen team will be in touch with all the details. We cannot wait for your family to be part of it!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"oc-pra",bId:"ourchurch",cat:"Pastoral Care",title:"Prayer Request",ki:["Prayer requests are taken seriously and treated confidentially","Can be passed to the pastoral team or prayer team","Urgent pastoral need: escalate immediately","Non-urgent: log the request and pass to pastoral team within 24 hours"],script:"Thank you so much for sharing that - it takes courage to ask for prayer and we are genuinely honoured. We have a pastoral and prayer team who take these seriously and treat everything with full confidentiality. Can I ask - is this something urgent where you would like someone to call you today, or are you happy for us to pass your details to our prayer team to be in touch soon?",esc:"PRIORITY if urgent - Pastoral team / Ps Kev immediately. Non-urgent: prayer team within 24 hours.",sms:"Hi [Name], thank you for trusting us with your prayer request. Our pastoral team will be in touch. You are not alone.",notes:"Flag as pastoral priority if person sounds distressed.",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-gen",bId:"lovethecity",cat:"General Info",title:"What is Love This City?",ki:["Charitable arm of the OurChurch movement","Public Benevolent Institution (PBI) - stronger than standard DGR","Operates HeavenScentMe social enterprise","TheFORInitiative: FOR God FOR people FOR the city"],script:"Love This City is our charitable organisation - we exist to practically love and serve the Gold Coast community. We hold PBI status which means we are the real deal under Australian charity law. We run social enterprise programs like HeavenScentMe and community care programs. Is there something specific you would like to find out about or get involved with?",esc:"Love This City coordinator",sms:"Hi [Name], thanks for reaching out to Love This City! Someone from our team will be in touch soon.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-giv",bId:"lovethecity",cat:"Donations and Giving",title:"Donations - Tax Deductible",ki:["Love This City IS a DGR/PBI - all donations tax deductible","Receipts auto-issued for donations $2+","Online giving: lovethiscity.org.au/give","Bequests and major gifts: connect with director"],script:"Thank you so much - your generosity makes a real difference in people lives on the Gold Coast. Love This City is a Public Benevolent Institution so your donation is fully tax deductible with an automatic receipt. Would you like the online giving link or bank transfer details?",esc:"Finance / director for major gifts or bequests",sms:"Hi [Name], thank you so much! Give at lovethiscity.org.au/give - all donations are tax deductible and you receive an automatic receipt. God bless!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-pas",bId:"lovethecity",cat:"Pastoral / Welfare",title:"Pastoral or Welfare Support",ki:["PRIORITY - LTC is a community welfare referral pathway","Can connect with: housing, food support, mental health referrals","Do NOT counsel - warm handoff only","Crisis: Lifeline 13 11 14 | Beyond Blue 1300 22 4636"],script:"Thank you so much for getting in touch. You have come to the right place. Can you tell me a little about what is going on? That will help me point you to the right person or service as quickly as possible.",esc:"PRIORITY - LTC welfare coordinator or OurChurch pastoral team",sms:"",notes:"",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-hlp",bId:"lovethecity",cat:"Community Welfare",title:"How to Get Help / Access Support",ki:["LTC provides practical community support - not a crisis service","Programs include food support, financial assistance referrals, wellbeing check-ins","Intake usually through a welfare coordinator - not walk-in","If person is in crisis: refer to Lifeline 13 11 14 or local welfare agency first"],script:"Love This City is here to help - and I am glad you reached out. We are not a crisis service but we do walk alongside people in real practical ways: food support, community connections, wellbeing check-ins and more. The best next step is to connect you with one of our welfare coordinators who can properly understand your situation and figure out what help is available. Are you okay if I get someone to give you a call?",esc:"PRIORITY - LTC Welfare Coordinator - pass details promptly",sms:"Hi [Name], thanks for reaching out to Love This City. One of our team will call you soon to chat about how we can help. You are in good hands.",notes:"NEVER try to assess or diagnose. Warm handoff only. Crisis: Lifeline 13 11 14.",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-vol",bId:"lovethecity",cat:"Get Involved",title:"Volunteering with Love This City",ki:["LTC relies on volunteers across community programs and HeavenScentMe","Roles: community care visits, food programs, admin, events, HeavenScentMe delivery","Expression-specific volunteering (e.g. HeavenScentMe Cafe) handled separately","First step: expression of interest via lovethiscity.org.au/volunteer"],script:"That is fantastic - we genuinely could not do what we do without our volunteers. Love This City has a range of ways to get involved depending on your availability and what you are passionate about: community care, food programs, events, admin, and also our social enterprise HeavenScentMe. The best place to start is filling in a quick expression of interest and then someone from our team will reach out to have a proper chat. Would you like the link?",esc:"LTC Volunteer Coordinator",sms:"Hi [Name], so excited you want to volunteer! Here is the link to get started: lovethiscity.org.au/volunteer - our team will be in touch soon.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-tax",bId:"lovethecity",cat:"Giving",title:"Tax-Deductible Giving and Donations",ki:["Love This City is a PBI - ALL donations are tax deductible","This is different from OurChurch which is NOT a DGR","Online giving: lovethiscity.org.au/give","Large gifts, bequests or grants: refer to LTC Director","Regular givers receive receipts automatically"],script:"Love This City is a registered Public Benevolent Institution - which is actually the highest level of charity status in Australia - so yes, all donations are fully tax deductible and you will receive a receipt automatically. You can give online at lovethiscity.org.au/give. If you are thinking about a significant gift or a bequest, I would love to connect you directly with our director who can have that conversation properly. What were you thinking?",esc:"LTC Director for large gifts, bequests, or grants",sms:"Hi [Name], thank you for your generosity! You can give at lovethiscity.org.au/give - all donations are tax deductible. What you give literally changes lives.",notes:"Always clarify: LTC is tax deductible. OurChurch is NOT.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"ltc-prt",bId:"lovethecity",cat:"Corporate / Organisational",title:"Partnership or Sponsorship Enquiry",ki:["LTC welcomes corporate partnerships and community organisation collaborations","Partnership options: financial sponsors, in-kind support, co-delivery of programs","All partnership conversations go to LTC Director / leadership team","Refer to lovethiscity.org.au for current programs and impact data"],script:"We love partnering with organisations who share our heart for the Gold Coast community - it genuinely multiplies what we can do. Love This City has PBI status which makes us a solid partner for any corporate community giving program. The best next step is to connect you with our director who handles partnerships. Can I get your name and organisation, and have them reach out to arrange a proper conversation?",esc:"LTC Director - flag as partnership/sponsorship enquiry",sms:"Hi [Name], thanks for your interest in partnering with Love This City! Our director will be in touch soon to explore what is possible.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-gen",bId:"junction",cat:"General Info",title:"What is The Junction?",ki:["Low-threshold community cafe, workspace and events - Burleigh Heads","Open to the whole community - not just church people","Junction Points vision: one in every suburb","Website: thejunctiongc.com"],script:"The Junction is a community space right here at Burleigh Heads - part cafe, part co-working space, part event venue. Anyone is welcome - to come, connect, work, or grab a great coffee. We host all kinds of events and the space is also available for hire. What were you looking for today?",esc:"Junction venue manager",sms:"Hi [Name], great to hear from you! Find out more about The Junction at thejunctiongc.com - we would love to see you in here soon.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-ven",bId:"junction",cat:"Venue Hire",title:"Venue Hire at The Junction",ki:["Available for: private events, corporate, workshops, community","Includes: AV equipment, flexible layout, kitchen access","Minimum 2 weeks notice preferred","Pricing: contact venue team for quote"],script:"The Junction is a great space for all kinds of events - workshops, corporate meetings, community gatherings, and private functions. We have AV, flexible layouts, kitchen access, and great coffee. To get you a quote I just need the date, roughly how many people, and the type of event. Want to give me those details now?",esc:"Junction venue manager for quotes and bookings",sms:"Hi [Name], thanks for your interest in hiring The Junction! Our team will be in touch shortly with availability and pricing.",notes:"Add actual pricing once confirmed",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-pas",bId:"junction",cat:"Pastoral / Welfare",title:"Pastoral or Welfare Support",ki:["The Junction is a low-threshold safe community space","Do not probe - listen warmly and connect","Refer to OurChurch pastoral or LTC welfare","Crisis: Lifeline 13 11 14 | Beyond Blue 1300 22 4636"],script:"Thank you for trusting us with that. The Junction is a safe space and we want to make sure you are okay. Are you connected with OurChurch or Love This City, or coming to us fresh? Either way is absolutely fine - I would love to connect you with the right person.",esc:"PRIORITY - OurChurch pastoral or LTC welfare coordinator",sms:"",notes:"",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-caf",bId:"junction",cat:"Cafe",title:"Cafe - Hours, Menu and Ordering",ki:["The Junction cafe serves specialty coffee and food","Opening hours: confirm current hours with venue - can change seasonally","Walk-ins welcome during open hours","Not a franchise - operated as part of The Junction community space","Takeaway and dine-in available"],script:"The Junction cafe is a great spot - specialty coffee, quality food, and a genuinely good vibe. It is open during standard hours during the week and on weekends - the best place to confirm current hours and the menu is thejunctiongc.com/cafe. Walk-ins are always welcome. Were you wanting to pop in, or is this for an event or function?",esc:"Junction cafe team / venue manager",sms:"Hi [Name], you can check our cafe hours and menu at thejunctiongc.com/cafe - we would love to see you in!",notes:"Check with venue team for current seasonal hours before confirming.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-wrk",bId:"junction",cat:"Workspace",title:"Co-Working and Workspace",ki:["The Junction offers co-working space - hot desks and/or dedicated options","Good WiFi, cafe on-site, meeting rooms potentially available","Day passes and recurring arrangements available","Pricing: confirm with venue team","Suited to remote workers, freelancers, small teams"],script:"The Junction workspace is a really popular option for people who want to work somewhere that does not feel like a corporate office - great coffee, good WiFi, a relaxed atmosphere and a real community feel. We have hot desk options and can talk about more regular arrangements too. For pricing and availability the best thing is for me to connect you with our venue team - or you can check thejunctiongc.com/workspace. What kind of setup are you looking for?",esc:"Junction venue / workspace manager",sms:"Hi [Name], great to hear you are interested in The Junction workspace! Our team will be in touch with details. Check out thejunctiongc.com/workspace in the meantime.",notes:"Pricing TBC - always refer to venue team for quotes.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-evt",bId:"junction",cat:"Events",title:"Events - What's On",ki:["The Junction hosts a rotating calendar of community events","Types: markets, workshops, music, community nights, church-adjacent events","Check thejunctiongc.com/events for current listings","Some events are free, some ticketed","External promoters can also hire the space for their own events"],script:"There is usually something good happening at The Junction! We host all kinds of events - workshops, community nights, markets, music and more. The best place to see what is on right now is thejunctiongc.com/events. Is there a particular type of event you are looking for, or are you wanting to bring your own event to the space?",esc:"Junction events coordinator",sms:"Hi [Name], check out what is on at The Junction at thejunctiongc.com/events - would love to see you there!",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"tj-vib",bId:"junction",cat:"General / Community",title:"Community Connection - The Junction's Vibe and Values",ki:["The Junction is a deliberately low-threshold community space - not a church building","Open to everyone regardless of faith background","Owned and operated by OurChurch / People of The Way but with a public-facing identity","Designed for: community, creativity, commerce, and conversation","Good place to refer people who are curious but not ready for a church setting"],script:"The Junction is a community space at its heart - it is a cafe, a workspace, an event venue, and a place where people just come to connect. It is owned by a church community but you would not necessarily know that walking in - it is genuinely for everyone. If someone told you about it or you are just curious about what it is, the best thing is to come in for a coffee and see for yourself. Is there anything specific that brought you to reach out today?",esc:"Junction venue manager or pastoral team if welfare need emerges",sms:"Hi [Name], The Junction is a great community space - coffee, events, workspace and more. Come check it out at thejunctiongc.com!",notes:"Good referral point for people curious about faith but not ready for a Sunday service.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-gen",bId:"heavenscent",cat:"General Info",title:"What is HeavenScentMe?",ki:["Social enterprise under Love This City - one brand two expressions","Expression 1: Cafe and Hospitality (mobile cafe, events)","Expression 2: Home and Care (cleaning, yard work, home support)","All profits fund Love This City charitable programs","Licensing model - NOT a franchise"],script:"HeavenScentMe is a social enterprise - every service you use helps fund meaningful community work on the Gold Coast through Love This City. We run two main expressions: a cafe and hospitality service for events and functions, and a home and care service for cleaning, yard work, and home support. What can we help you with today?",esc:"HeavenScentMe team lead",sms:"Hi [Name], thanks for your interest in HeavenScentMe! Our team will be in touch shortly. Every service you use helps fund community mission on the Gold Coast.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-svc",bId:"heavenscent",cat:"HeavenScentMe Services",title:"Services Detail",ki:["Cafe and Hospitality: mobile cafe, specialty coffee, event catering","Home and Care: cleaning, yard work, home maintenance and support","Concierge: personalised assistance","Commercial clients fund charitable delivery to people in need"],script:"HeavenScentMe runs three expressions: Cafe and Hospitality - mobile cafe and catering for events and markets. Home and Care - cleaning, yard work, home maintenance and support. Concierge - personalised assistance. Every service funds Love This City community mission. Which are you interested in?",esc:"HeavenScentMe team lead for pricing and bookings",sms:"Hi [Name], our team will follow up shortly with pricing and availability for the HeavenScentMe service you are interested in.",notes:"Add actual pricing once confirmed",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-pas",bId:"heavenscent",cat:"Pastoral / Welfare",title:"Pastoral or Welfare Support",ki:["HSM team members will encounter vulnerable clients","If client discloses distress: warm handoff only - do NOT counsel","Escalate immediately to LTC welfare coordinator","Crisis: Lifeline 13 11 14 | Beyond Blue 1300 22 4636"],script:"Thank you so much for reaching out. HeavenScentMe is connected to a team of people who genuinely care about wellbeing - not just the services we provide. If there is something deeper going on I can connect you with someone from our pastoral care team. It is completely confidential. Would that be okay?",esc:"PRIORITY - Love This City welfare / OurChurch pastoral team immediately",sms:"",notes:"",p:true,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-hom",bId:"heavenscent",cat:"Home and Care Bookings",title:"Booking a Home and Care Service",ki:["Services: domestic cleaning, yard work / garden maintenance, home support, concierge","Booking via heavenscentme.com.au/book or via phone","Pricing: quoted on enquiry - depends on job size and frequency","Regular and one-off bookings available","All operators are vetted and aligned with the social enterprise mission"],script:"Booking with HeavenScentMe is easy - and every service you book helps fund real community work on the Gold Coast through Love This City. For home and care services like cleaning, yard work, or general home support, we can get you a quote based on what you need. Are you after a one-off clean or something more regular? Once I have the details I can connect you with the team who will follow up with availability and pricing.",esc:"HeavenScentMe Home and Care team lead",sms:"Hi [Name], thanks for booking with HeavenScentMe! Our team will be in touch shortly with availability and pricing. Every booking counts.",notes:"Pricing TBC - always refer to team for quotes.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-caf",bId:"heavenscent",cat:"Cafe and Hospitality Bookings",title:"Cafe and Hospitality - Events and Catering",ki:["Mobile cafe service: specialty coffee for markets, festivals, corporate events, private functions","Event catering available: menus on enquiry","Minimum booking requirements: confirm with team","Based on Gold Coast - travel range to be confirmed with team","All revenue supports Love This City mission"],script:"HeavenScentMe Cafe is a mobile specialty coffee and hospitality service - we can come to your event, market, corporate function, or private occasion and take care of the coffee and catering. It is a great option for anyone who wants quality hospitality with a feel-good story behind it, because every booking helps fund community care programs. Can I get a few details - what is the event, when is it, and roughly how many people are you expecting?",esc:"HeavenScentMe Cafe / Hospitality team lead",sms:"Hi [Name], thanks for your interest in HeavenScentMe Cafe! Our hospitality team will be in touch to talk through your event needs.",notes:"Get event date, size and type before passing to team.",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-why",bId:"heavenscent",cat:"About / Mission",title:"The Social Enterprise Story - Why HeavenScentMe?",ki:["Social enterprise: commercial services that fund charitable mission","Two expressions: Cafe and Hospitality + Home and Care","All profits fund Love This City programs on the Gold Coast","NOT a franchise - operates under a licensing model","Operators are connected to the broader People of The Way mission community"],script:"HeavenScentMe is what we call a social enterprise - the simplest way to explain it is: you get a great service, and the money you spend helps us fund practical community care on the Gold Coast through Love This City. We are not a franchise - it is more of a mission-aligned licensing model where our operators genuinely believe in what we are doing. So whether you are booking a coffee van for your event or getting your house cleaned, you are actually part of something bigger. Is there a specific service you would like to know more about?",esc:"HeavenScentMe team lead or LTC liaison",sms:"Hi [Name], thanks for learning more about HeavenScentMe! Every service funds real community mission. Our team will be in touch.",notes:"",p:false,ratings:{up:0,down:0},translations:{}},  
-{id:"hs-opr",bId:"heavenscent",cat:"Business / Licensing",title:"Becoming a HeavenScentMe Operator / Licensee",ki:["HeavenScentMe uses a licensing (not franchise) model","Operators run under the HSM brand and mission framework","Faith-aligned: operators need to be comfortable with the LTC/OurChurch values context","Expressions available: Cafe and Hospitality, Home and Care","Enquiries go to the HeavenScentMe / LTC leadership team"],script:"That is a really exciting question - HeavenScentMe is growing and we do have a licensing model for people who want to run an expression under the brand. It is not a franchise - you would be operating as part of a mission-aligned community, which means the values piece matters. If that resonates with you, I would love to get your details and have the right person from our leadership team reach out to have a proper conversation. What expression were you interested in - the cafe, the home and care, or are you open to either?",esc:"HeavenScentMe / LTC leadership for operator / licensee enquiries",sms:"Hi [Name], thanks for your interest in becoming a HeavenScentMe operator! Our leadership team will be in touch to explore next steps.",notes:"Values alignment is important - flag this clearly when passing to leadership.",p:false,ratings:{up:0,down:0},translations:{}}  
-];  
-var DL=[  
-{id:"ql-1",brand:"ourchurch",label:"Plan a Visit - OurChurch",url:"https://ourchurch.org.au/visit",desc:"Everything you need to know before your first Sunday."},  
-{id:"ql-2",brand:"ourchurch",label:"Give Online - OurChurch",url:"https://ourchurch.org.au/give",desc:"Online giving to OurChurch."},  
-{id:"ql-3",brand:"ourchurch",label:"Volunteer - OurChurch",url:"https://ourchurch.org.au/volunteer",desc:"Express your interest in volunteering at OurChurch."},  
-{id:"ql-4",brand:"ourchurch",label:"Events and Tickets - OurChurch",url:"https://ourchurch.org.au/events",desc:"Upcoming events and ticketing."},  
-{id:"ql-5",brand:"ourchurch",label:"Connect with Us - OurChurch",url:"https://ourchurch.org.au/connect",desc:"Get connected with OurChurch community."},  
-{id:"ql-6",brand:"lovethecity",label:"Give Online - Love This City",url:"https://lovethiscity.org.au/give",desc:"Tax-deductible giving to Love This City (PBI/DGR)."},  
-{id:"ql-7",brand:"lovethecity",label:"Volunteer - Love This City",url:"https://lovethiscity.org.au/volunteer",desc:"Get involved with Love This City community programs."},  
-{id:"ql-8",brand:"lovethecity",label:"About Love This City",url:"https://lovethiscity.org.au/about",desc:"Learn about Love This City and what we do."},  
-{id:"ql-9",brand:"junction",label:"Venue Hire - The Junction",url:"https://thejunctiongc.com/venue-hire",desc:"Book The Junction for your event or function."},  
-{id:"ql-10",brand:"junction",label:"Events - The Junction",url:"https://thejunctiongc.com/events",desc:"See what is on at The Junction."},  
-{id:"ql-11",brand:"junction",label:"Cafe and Menu - The Junction",url:"https://thejunctiongc.com/cafe",desc:"The Junction cafe, menu and opening hours."},  
-{id:"ql-12",brand:"junction",label:"Workspace - The Junction",url:"https://thejunctiongc.com/workspace",desc:"Co-working space at The Junction."},  
-{id:"ql-13",brand:"heavenscent",label:"Home and Care - HeavenScentMe",url:"https://heavenscentme.com.au/home-care",desc:"Cleaning, yard work and home support services."},  
-{id:"ql-14",brand:"heavenscent",label:"Cafe and Hospitality - HeavenScentMe",url:"https://heavenscentme.com.au/hospitality",desc:"Mobile cafe and event catering."},  
-{id:"ql-15",brand:"heavenscent",label:"Book HeavenScentMe",url:"https://heavenscentme.com.au/book",desc:"Book a HeavenScentMe service today."},  
-{id:"ql-16",brand:"heavenscent",label:"About HeavenScentMe",url:"https://heavenscentme.com.au/about",desc:"What is HeavenScentMe and how it works."}  
-];  
-var S={concierge:null,tab:"scripts",activeBrand:"ourchurch",activeScript:"oc-gen",editingId:null,vols:DV.slice(),team:DT.slice(),sumEmail:"wmarkham@ourchurch.org.au",brands:JSON.parse(JSON.stringify(DB)),scripts:JSON.parse(JSON.stringify(DS)),langs:["English"],activeLang:"English",log:[],allHistory:[],quickLinks:DL.slice()};  
-function ge(id){return document.getElementById(id);}  
-function td(){return new Date().toISOString().split("T")[0];}  
-function tn(){return new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});}  
-function gid(){return "id-"+Date.now()+"-"+Math.random().toString(36).slice(2,6);}  
-function ls(k){return localStorage.getItem(k);}  
-function lss(k,v){try{localStorage.setItem(k,v);}catch(e){}}  
-function showMod(id){ge(id).classList.remove("hidden");}  
-function hideMod(id){ge(id).classList.add("hidden");}  
-var _tt=null;  
-function toast(msg,type){var el=ge("toast-el");if(!el){el=document.createElement("div");el.id="toast-el";document.body.appendChild(el);}el.textContent=msg;el.style.cssText="position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:8px;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.2);color:#fff;font-family:Georgia,serif;background:"+(type==="e"?"#cc3333":"#2C5F2E");if(_tt)clearTimeout(_tt);_tt=setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},3000);}  
-var _pin="";  
-function pp(d){if(_pin.length>=4)return;_pin+=d;updDots();if(_pin.length===4)setTimeout(chkPin,200);}  
-function pbk(){_pin=_pin.slice(0,-1);updDots();}  
-function pclr(){_pin="";updDots();ge("pin-err").textContent="";}  
-function updDots(){for(var i=0;i<4;i++){var d=ge("pd"+i);if(d)d.className="pin-dot"+(i<_pin.length?" on":"");}}  
-function chkPin(){if(_pin===PIN){ge("pin-wrap").classList.add("hidden");loadDrive();}else{ge("pin-err").textContent="Incorrect PIN - try again";_pin="";updDots();setTimeout(function(){ge("pin-err").textContent="";},2000);}}  
-document.addEventListener("keydown",function(e){if(!ge("pin-wrap").classList.contains("hidden")){if(e.key>="0"&&e.key<="9")pp(e.key);else if(e.key==="Backspace")pbk();}});  
-function loadDrive(){ge("ld-wrap").classList.remove("hidden");fetch(DRIVE_URL+"?action=load",{method:"GET"}).then(function(r){return r.json();}).then(function(data){if(data.scripts&&data.scripts.length){S.scripts=data.scripts.map(function(s){if(!s.ratings)s.ratings={up:0,down:0};if(!s.translations)s.translations={};if(!s.sms)s.sms="";return s;});}if(data.brands)S.brands=Object.assign({},DB,data.brands);if(data.team)S.team=data.team;if(data.vols)S.vols=data.vols;if(data.sumEmail)S.sumEmail=data.sumEmail;if(data.langs)S.langs=data.langs;afterLoad();}).catch(function(){afterLoad();toast("Using built-in scripts - Drive unavailable");});}  
-function afterLoad(){try{var h=ls("ccc-hist");if(h)S.allHistory=JSON.parse(h);}catch(e){}try{var log=ls("ccc-log-"+td());if(log)S.log=JSON.parse(log);}catch(e){}try{var r=ls("ccc-ratings");if(r){var rt=JSON.parse(r);S.scripts.forEach(function(sc){if(rt[sc.id])sc.ratings=rt[sc.id];});}}catch(e){}try{var ql=ls("ccc-ql");if(ql)S.quickLinks=JSON.parse(ql);}catch(e){}ge("ld-wrap").classList.add("hidden");buildSI();ge("si-wrap").classList.remove("hidden");}  
-function syncDrive(){var payload={version:"v12",updated:td(),brands:S.brands,scripts:S.scripts,team:S.team,vols:S.vols,sumEmail:S.sumEmail,langs:S.langs};toast("Saving to Drive...");fetch(DRIVE_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({action:"save",payload:payload})}).then(function(){toast("Saved to Drive");}).catch(function(){toast("Drive save failed","e");});}  
-function buildSI(){var g=ge("vgrid");g.innerHTML="";S.vols.forEach(function(n){var b=document.createElement("button");b.className="vbtn";b.textContent=n;b.onclick=function(){signIn(n);};g.appendChild(b);});}  
-function signIn(name){if(!name||!name.trim())return;S.concierge=name.trim();ge("si-wrap").classList.add("hidden");ge("app-wrap").classList.remove("hidden");ge("usr-name").textContent=S.concierge;render();}  
-function signOut(){S.concierge=null;ge("app-wrap").classList.add("hidden");ge("si-wrap").classList.remove("hidden");}  
-function ST(tab){S.tab=tab;["scripts","log","history","quicksend","settings"].forEach(function(t){var btn=ge("tb-"+t);var pane=ge("pn-"+t);if(btn)btn.className="ntab"+(t===tab?" active":"");if(pane)pane.className=(t===tab?"":"hidden");});if(tab==="log")renderLog();if(tab==="history")renderHistory();if(tab==="quicksend")renderQS();if(tab==="settings")renderSettings();}  
-function renderSidebar(){var bl=ge("brand-list");bl.innerHTML="";var bIds=[];S.scripts.forEach(function(s){if(bIds.indexOf(s.bId)<0)bIds.push(s.bId);});bIds.forEach(function(bId){var bc=S.brands[bId]||{name:bId,short:"?",accent:"#888"};var b=document.createElement("button");b.className="bbtn"+(S.activeBrand===bId?" active":"");b.style.borderLeftColor=S.activeBrand===bId?bc.accent:"transparent";b.innerHTML="<div class='bdot' style='background:"+bc.accent+"'>"+bc.short+"</div><span class='bname'>"+bc.name+"</span>";b.onclick=(function(id){return function(){S.activeBrand=id;var f=S.scripts.filter(function(s){return s.bId===id;})[0];if(f)S.activeScript=f.id;renderSidebar();renderScriptView();};})(bId);bl.appendChild(b);});var sl=ge("script-list");sl.innerHTML="";var ac=(S.brands[S.activeBrand]||{accent:"#ee1c25"}).accent;S.scripts.filter(function(s){return s.bId===S.activeBrand;}).forEach(function(sc){var b=document.createElement("button");b.className="sbtn"+(S.activeScript===sc.id?" active":"");b.style.borderLeftColor=S.activeScript===sc.id?ac:"transparent";b.innerHTML="<div style='flex:1;min-width:0;'><div class='stitle'>"+(sc.p?"PAS: ":"")+sc.title+"</div><div class='scat'>"+sc.cat+"</div></div>";b.onclick=(function(id){return function(){S.activeScript=id;renderSidebar();renderScriptView();};})(sc.id);sl.appendChild(b);});}  
-function renderScriptView(){var sc=S.scripts.filter(function(s){return s.id===S.activeScript;})[0];var el=ge("script-view");if(!sc){el.innerHTML="<div style='text-align:center;padding:60px;color:#a0a8b5;'>Select a script or add a new one.</div>";return;}var bc=S.brands[sc.bId]||{name:sc.bId,short:"?",accent:"#888"};var a=bc.accent;var up=(sc.ratings&&sc.ratings.up)||0;var dn=(sc.ratings&&sc.ratings.down)||0;var rtxt=up>0||dn>0?up+" Works well "+dn+" Needs update":"No ratings yet";var langBar="";if(S.langs.length>1){var lbs="";S.langs.forEach(function(l){var ac2=S.activeLang===l?" active":"";lbs+="<button class='lang-btn"+ac2+"' onclick='setLang(\""+l+"\")'>"+ l+"</button>";});langBar="<div class='lang-bar'><span style='font-size:11px;color:#7a8090;'>View in:</span>"+lbs+"</div>";}var stxt=S.activeLang!=="English"&&sc.translations&&sc.translations[S.activeLang]?sc.translations[S.activeLang]:sc.script;var tNote=S.activeLang!=="English"&&(!sc.translations||!sc.translations[S.activeLang])?"<div style='font-size:11px;color:#b8860b;margin-bottom:8px;'>No "+S.activeLang+" translation yet.</div>":"";var lLbl=S.activeLang!=="English"?" - "+S.activeLang:"";var h="";h+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:11px 15px;background:"+a+"12;border-radius:10px;border:1px solid "+a+"30;'>";h+="<div style='width:32px;height:32px;border-radius:7px;background:"+a+";display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:10px;flex-shrink:0;'>"+bc.short+"</div>";h+="<div style='flex:1'><div style='font-weight:bold;color:"+a+";font-size:13px;'>"+bc.name+"</div><div style='font-size:11px;color:#888;'>"+sc.cat+"</div></div>";h+="<button class='btn btn-o btn-sm' style='border-color:"+a+"55;color:"+a+";' onclick='openEdit(\""+sc.id+"\")'>Edit</button>";h+="<button class='btn btn-p btn-sm' style='background:"+a+";' onclick='goLog(\""+sc.id+"\")'>Log Call</button>";h+="</div>";if(sc.p){h+="<div class='pas-alert'><div style='font-size:18px;'>!</div><div><div class='pas-t'>Pastoral / Welfare - Handle with Great Care</div><div class='pas-s'>Never give advice. Warm handoff only. Crisis: Lifeline 13 11 14 | Beyond Blue 1300 22 4636</div></div></div>";}h+=langBar;h+="<h2 style='font-size:19px;font-weight:bold;color:#1a1d23;margin:0 0 16px 0;'>"+sc.title+"</h2>";h+="<div class='rate-bar'><span class='rate-lbl'>Script rating: "+rtxt+"</span>";h+="<button class='rate-btn up"+(up>0?" on":"")+"' onclick='rateScript(\""+sc.id+"\",\"up\")'>Works well</button>";h+="<button class='rate-btn dn"+(dn>0?" on":"")+"' onclick='rateScript(\""+sc.id+"\",\"down\")'>Needs update</button></div>";h+="<div class='card'><span class='clabel'>Key Info</span>";sc.ki.forEach(function(k,i){var bb=i<sc.ki.length-1?"border-bottom:1px solid #eee;":"";h+="<div style='display:flex;gap:9px;align-items:flex-start;padding:5px 0;"+bb+"'><span style='color:"+a+";flex-shrink:0;margin-top:2px;'>&#8250;</span><span style='font-size:13px;color:#1a1d23;line-height:1.5;'>"+k+"</span></div>";});h+="</div>";h+="<div class='card' style='position:relative;'><span class='clabel'>Suggested Script"+lLbl+"</span>"+tNote+"<div style='font-size:13px;line-height:1.9;color:#2a3040;white-space:pre-wrap;font-style:italic;'>"+stxt+"</div><button class='btn btn-o btn-sm' style='position:absolute;top:13px;right:13px;border-color:"+a+"55;color:"+a+";' onclick='copyTxt(\""+sc.id+"\")'>Copy</button></div>";var escBg=sc.p?"background:#fff0f0;border-color:#ffaaaa;":"";var escCol=sc.p?"color:#cc2222;":"color:#4a5060;";h+="<div class='card' style='"+escBg+"'><div style='display:flex;align-items:center;gap:10px;'><span style='font-size:18px;'>&#8599;</span><div><span class='clabel'>Escalate To</span><div style='font-size:13px;"+escCol+"'>"+sc.esc+"</div></div></div></div>";if(sc.sms){h+="<div class='card' style='background:#f8f9fb;border-color:#dde0e5;'><span class='clabel'>SMS / WhatsApp Template</span><div class='sms-text'>"+sc.sms+"</div><div style='margin-top:10px;'><button class='btn btn-p btn-sm' style='background:#7B4F9E;' onclick='copySMSScript(\""+sc.id+"\")'>Copy SMS / WhatsApp</button></div></div>";}if(sc.notes){h+="<div class='card' style='background:#f8f9fb;border-color:#dde0e5;'><span class='clabel'>Team Notes</span><div style='font-size:12px;color:#4a5060;line-height:1.6;'>"+sc.notes+"</div></div>";}el.innerHTML=h;}  
-function setLang(l){S.activeLang=l;renderScriptView();}  
-function copyTxt(id){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(!sc)return;var t=S.activeLang!=="English"&&sc.translations&&sc.translations[S.activeLang]?sc.translations[S.activeLang]:sc.script;navigator.clipboard.writeText(t).then(function(){toast("Script copied");});}  
-function copySMSScript(id){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(sc&&sc.sms)navigator.clipboard.writeText(sc.sms).then(function(){toast("SMS copied");});}  
-function goLog(id){ST("log");setTimeout(function(){prefillLog(id);},80);}  
-function rateScript(id,type){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(!sc)return;if(!sc.ratings)sc.ratings={up:0,down:0};sc.ratings[type]=(sc.ratings[type]||0)+1;var rt={};S.scripts.forEach(function(s){rt[s.id]=s.ratings;});lss("ccc-ratings",JSON.stringify(rt));renderSidebar();renderScriptView();toast(type==="up"?"Marked as working well":"Flagged for review");}  
-function openEdit(id){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(!sc)return;S.editingId=id;ge("mod-sc-t").textContent="Edit Script";ge("es-title").value=sc.title;ge("es-cat").value=sc.cat;ge("es-pas").checked=sc.p;ge("es-script").value=sc.script;ge("es-esc").value=sc.esc;ge("es-sms").value=sc.sms||"";ge("es-notes").value=sc.notes;renderKI(sc.ki);renderTransFields(sc);showMod("mod-script");}  
-function addScript(){var ns={id:gid(),bId:S.activeBrand,cat:"",title:"New Script",ki:[""],script:"",esc:"",sms:"",notes:"",p:false,ratings:{up:0,down:0},translations:{}};S.scripts.push(ns);S.activeScript=ns.id;S.editingId=ns.id;ge("mod-sc-t").textContent="New Script";ge("es-title").value="";ge("es-cat").value="";ge("es-pas").checked=false;ge("es-script").value="";ge("es-esc").value="";ge("es-sms").value="";ge("es-notes").value="";renderKI([""]);renderTransFields(ns);showMod("mod-script");}  
-function renderKI(items){var l=ge("ki-list");l.innerHTML="";items.forEach(function(v,i){var d=document.createElement("div");d.style.cssText="display:flex;gap:8px;margin-bottom:8px;align-items:center;";d.innerHTML="<span style='color:#888;flex-shrink:0;'>&#8250;</span><input class='inp' value='"+v.replace(/'/g,"&#39;")+"' placeholder='Key fact...' style='flex:1;' /><button onclick='removeKI("+i+")' style='background:transparent;border:none;color:#aaa;cursor:pointer;font-size:16px;padding:0 4px;'>x</button>";l.appendChild(d);});}  
-function getKI(){return Array.from(ge("ki-list").querySelectorAll("input")).map(function(i){return i.value;});}  
-function addKI(){renderKI(getKI().concat(""));}  
-function removeKI(i){var v=getKI();v.splice(i,1);if(!v.length)v.push("");renderKI(v);}  
-function renderTransFields(sc){var tf=ge("es-trans-fields");tf.innerHTML="";S.langs.filter(function(l){return l!=="English";}).forEach(function(lang){var d=document.createElement("div");d.className="fg";var val=sc.translations&&sc.translations[lang]?sc.translations[lang]:"";d.innerHTML="<div class='flabel'>Script - "+lang+" translation</div><textarea class='inp ta' id='tr-"+lang+"' rows='3' placeholder='Paste "+lang+" version here...'>"+val+"</textarea>";tf.appendChild(d);});}  
-function saveScript(){var idx=-1;for(var i=0;i<S.scripts.length;i++){if(S.scripts[i].id===S.editingId){idx=i;break;}}if(idx<0)return;var ki=getKI().filter(function(v){return v.trim();});var trans={};S.langs.filter(function(l){return l!=="English";}).forEach(function(lang){var el=ge("tr-"+lang);if(el&&el.value.trim())trans[lang]=el.value.trim();});S.scripts[idx]=Object.assign({},S.scripts[idx],{title:ge("es-title").value,cat:ge("es-cat").value,p:ge("es-pas").checked,ki:ki.length?ki:[""],script:ge("es-script").value,esc:ge("es-esc").value,sms:ge("es-sms").value,notes:ge("es-notes").value,translations:trans});hideMod("mod-script");render();toast("Script saved - click Save to Drive to sync");}  
-function delScript(){if(!confirm("Delete this script?"))return;S.scripts=S.scripts.filter(function(s){return s.id!==S.editingId;});var rem=S.scripts.filter(function(s){return s.bId===S.activeBrand;});S.activeScript=rem.length?rem[0].id:(S.scripts.length?S.scripts[0].id:null);hideMod("mod-script");render();toast("Deleted");}  
-function submitBrand(){var name=ge("mb-name").value.trim();var accent=ge("mb-col").value;if(!name)return;var id=name.toLowerCase().replace(/[^a-z0-9]/g,"");S.brands[id]={name:name,short:name.slice(0,3).toUpperCase(),accent:accent};var ns={id:gid(),bId:id,cat:"General Info",title:"New Script",ki:[""],script:"",esc:"",sms:"",notes:"",p:false,ratings:{up:0,down:0},translations:{}};S.scripts.push(ns);S.activeBrand=id;S.activeScript=ns.id;hideMod("mod-brand");ge("mb-name").value="";render();openEdit(ns.id);toast(name+" added");}  
-function doSearch(q){var sr=ge("sr-drop");if(!q||q.length<2){sr.style.display="none";return;}var terms=q.toLowerCase().split(" ").filter(Boolean);var results=[];S.scripts.forEach(function(sc){var hay=(sc.title+" "+sc.cat+" "+sc.script+" "+sc.ki.join(" ")+(sc.notes||"")).toLowerCase();var ok=terms.every(function(t){return hay.indexOf(t)>=0;});if(ok){var where="Script text";if(terms.every(function(t){return sc.title.toLowerCase().indexOf(t)>=0;}))where="Title";else if(terms.every(function(t){return sc.cat.toLowerCase().indexOf(t)>=0;}))where="Category";else if(terms.every(function(t){return sc.ki.join(" ").toLowerCase().indexOf(t)>=0;}))where="Key info";results.push({sc:sc,where:where});}});if(!results.length){sr.style.display="block";sr.innerHTML="<div class='sr-item' style='color:#a0a8b5;'>No scripts found</div>";return;}var html="";results.slice(0,6).forEach(function(r){var bc=S.brands[r.sc.bId]||{name:r.sc.bId};html+="<div class='sr-item' onclick='selectSR(\""+r.sc.id+"\")'><div style='font-size:12px;font-weight:bold;color:#1a1d23;'>"+r.sc.title+"</div><div class='sr-sub'>"+bc.name+" - "+r.sc.cat+" - "+r.where+"</div></div>";});sr.innerHTML=html;sr.style.display="block";}  
-function selectSR(id){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(!sc)return;S.activeBrand=sc.bId;S.activeScript=id;ge("srch-inp").value="";ge("sr-drop").style.display="none";render();ST("scripts");}  
-document.addEventListener("click",function(e){if(!e.target.closest(".sb-search"))ge("sr-drop").style.display="none";});  
-function renderLog(){var el=ge("pn-log");var brandOpts="";var bIds=[];S.scripts.forEach(function(s){if(bIds.indexOf(s.bId)<0)bIds.push(s.bId);});bIds.forEach(function(bId){var bc=S.brands[bId]||{name:bId};var sel=bId===S.activeBrand?" selected":"";brandOpts+="<option value='"+bId+"'"+sel+">"+bc.name+"</option>";});var teamOpts="<option value=''>- Select recipient -</option>";S.team.forEach(function(m){teamOpts+="<option value='"+m.email+"'>"+m.name+"</option>";});var sc=S.scripts.filter(function(s){return s.id===S.activeScript;})[0];var defCat=sc?sc.cat:"";el.innerHTML="<div style='max-width:100%;'><h2 style='font-size:18px;font-weight:bold;margin-bottom:20px;color:#1a1d23;'>Log a Call</h2><div class='card'><span class='clabel'>Caller Details</span><div class='fgrid'><div><div class='flabel'>Caller Name</div><input class='inp' id='l-name' placeholder='Full name' oninput='updateSMSPrev()' /></div><div><div class='flabel'>Phone Number</div><input class='inp' id='l-phone' placeholder='04xx xxx xxx' /></div></div><div class='fgrid'><div><div class='flabel'>Email Address</div><input class='inp' id='l-email' placeholder='email@example.com' /></div><div><div class='flabel'>Caller Status</div><select class='inp sel' id='l-status'><option>First Time Enquirer</option><option>Regular Attender</option><option>Community Member</option><option>Former Attender</option><option>Referred In</option><option>Unknown</option></select></div></div></div><div class='card'><span class='clabel'>Enquiry Details</span><div class='fgrid'><div><div class='flabel'>Brand</div><select class='inp sel' id='l-brand' onchange='checkPas();updateSMSPrev();'>"+brandOpts+"</select></div><div><div class='flabel'>Category</div><input class='inp' id='l-cat' value='"+defCat+"' placeholder='e.g. General Info' oninput='checkPas();updateSMSPrev();' /></div></div><div class='fgrid'><div><div class='flabel'>Urgency</div><select class='inp sel' id='l-urg'><option value='Routine'>Routine</option><option value='Follow Up Needed'>Follow Up Needed</option><option value='Urgent'>Urgent</option></select></div><div><div class='flabel'>Action Required By</div><select class='inp sel' id='l-recip'>"+teamOpts+"</select></div></div><div id='pas-notice' class='hidden' style='background:#fff0f0;border:1px solid #ffaaaa;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#cc2222;'>Pastoral call - caller details will NOT be recorded for privacy.</div><div id='log-notes'><div class='flabel'>Call Notes</div><textarea class='inp ta' id='l-notes' rows='4' placeholder='What did the caller say? Any specific requests or context...'></textarea></div><div id='pas-notes' class='hidden'><div class='flabel'>Brief Notes (no identifying information)</div><textarea class='inp ta' id='l-pas-notes' rows='3' placeholder='e.g. Person in distress - referred to pastoral team.'></textarea></div></div><div class='card'><span class='clabel'>SMS / WhatsApp Template</span><div style='font-size:11px;color:#7a8090;margin-bottom:10px;'>Auto-generated follow-up message</div><div class='sms-box'><div class='sms-text' id='sms-prev'>Fill in caller details above...</div></div><div style='display:flex;gap:8px;margin-top:10px;align-items:center;'><button class='btn btn-p btn-sm' style='background:#7B4F9E;' onclick='copySMSLog()'>Copy SMS / WhatsApp</button><span style='font-size:11px;color:#7a8090;'>Paste into your phone to send to caller</span></div></div><div style='display:flex;gap:10px;flex-wrap:wrap;'><button class='btn btn-p' style='background:#ee1c25;padding:10px 20px;font-size:13px;' onclick='sendEmail()'>Send Action Email</button><button class='btn btn-p' style='background:#2C5F2E;padding:10px 20px;font-size:13px;' onclick='logOnly()'>Log Only (no email)</button><button class='btn btn-o' style='border-color:#c8ccd3;color:#7a8090;padding:10px 20px;font-size:13px;' onclick='clearLog()'>Clear</button></div><div style='font-size:11px;color:#a0a8b5;margin-top:8px;'>Send Action Email opens Gmail in a new tab - just click Send.</div></div>";updateSMSPrev();}  
-function prefillLog(id){var sc=S.scripts.filter(function(s){return s.id===id;})[0];if(!sc)return;var bd=ge("l-brand");if(bd){for(var i=0;i<bd.options.length;i++){if(bd.options[i].value===sc.bId){bd.selectedIndex=i;break;}}}var cat=ge("l-cat");if(cat)cat.value=sc.cat;checkPas();updateSMSPrev();}  
-function checkPas(){var cat=(ge("l-cat")?ge("l-cat").value:"").toLowerCase();var ip=cat.indexOf("pastoral")>=0||cat.indexOf("welfare")>=0;var pn=ge("pas-notice");var ln=ge("log-notes");var pnn=ge("pas-notes");if(pn)pn.className=ip?"":"hidden";if(ln)ln.className=ip?"hidden":"";if(pnn)pnn.className=ip?"":"hidden";}  
-function updateSMSPrev(){var name=(ge("l-name")?ge("l-name").value:"").trim()||"[Name]";var bId=ge("l-brand")?ge("l-brand").value:"";var cat=ge("l-cat")?ge("l-cat").value:"";var sc=S.scripts.filter(function(s){return s.bId===bId&&s.cat===cat;})[0];var tmpl=sc&&sc.sms?sc.sms:"Hi [Name], thanks for getting in touch today! Someone from our team will follow up with you shortly. God bless!";var txt=tmpl.replace(/\[Name\]/g,name);var p=ge("sms-prev");if(p)p.textContent=txt;}  
-function copySMSLog(){var p=ge("sms-prev");if(p)navigator.clipboard.writeText(p.textContent).then(function(){toast("SMS copied");});}  
-function buildEntry(){var cat=ge("l-cat")?ge("l-cat").value:"";var ip=cat.toLowerCase().indexOf("pastoral")>=0||cat.toLowerCase().indexOf("welfare")>=0;var bId=ge("l-brand")?ge("l-brand").value:"";var bc=S.brands[bId]||{name:bId};var rs=ge("l-recip");var rEmail=rs?rs.value:"";var rName=rs&&rs.options[rs.selectedIndex]?rs.options[rs.selectedIndex].text:"";return {date:td(),time:tn(),concierge:S.concierge,brand:bc.name,bId:bId,cat:cat,callerName:ip?"Pastoral call - withheld":(ge("l-name")?ge("l-name").value:""),callerPhone:ip?"":(ge("l-phone")?ge("l-phone").value:""),callerEmail:ip?"":(ge("l-email")?ge("l-email").value:""),callerStatus:ip?"Pastoral":(ge("l-status")?ge("l-status").value:"Unknown"),urgency:ge("l-urg")?ge("l-urg").value:"Routine",notes:ip?((ge("l-pas-notes")?ge("l-pas-notes").value:"")||"Pastoral enquiry - details withheld"):(ge("l-notes")?ge("l-notes").value:""),recipEmail:rEmail,recipName:rName,isPastoral:ip,rowId:gid()};}  
-function pushSheet(entry){fetch(LOG_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({date:entry.date,time:entry.time,concierge:entry.concierge,brand:entry.brand,category:entry.cat,callerName:entry.callerName,callerPhone:entry.callerPhone,callerEmail:entry.callerEmail,callerStatus:entry.callerStatus,urgency:entry.urgency,notes:entry.notes,actionSentTo:entry.recipName,rowId:entry.rowId})}).catch(function(){});}  
-function saveEntry(entry){S.log.push(entry);lss("ccc-log-"+td(),JSON.stringify(S.log));if(!entry.isPastoral&&entry.callerName&&entry.callerName.indexOf("withheld")<0){S.allHistory.unshift(Object.assign({id:gid()},entry));if(S.allHistory.length>500)S.allHistory=S.allHistory.slice(0,500);lss("ccc-hist",JSON.stringify(S.allHistory));}pushSheet(entry);}  
-function clearLog(){["l-name","l-phone","l-email","l-notes","l-pas-notes"].forEach(function(id){var e=ge(id);if(e)e.value="";});["l-status","l-urg","l-recip"].forEach(function(id){var e=ge(id);if(e)e.selectedIndex=0;});updateSMSPrev();}  
-function logOnly(){var entry=buildEntry();saveEntry(entry);clearLog();toast("Call logged");}  
-function sendEmail(){var rs=ge("l-recip");if(!rs||!rs.value){toast("Please select a recipient","e");return;}var cat=(ge("l-cat")?ge("l-cat").value:"").toLowerCase();var ip=cat.indexOf("pastoral")>=0||cat.indexOf("welfare")>=0;if(!ip&&ge("l-name")&&!ge("l-name").value.trim()){toast("Please enter the caller name","e");return;}var entry=buildEntry();saveEntry(entry);var to=entry.recipEmail;if(entry.urgency==="Urgent"&&S.sumEmail&&S.sumEmail!==to)to+=","+S.sumEmail;var subj="["+entry.urgency.toUpperCase()+"] "+entry.brand+" - "+(entry.isPastoral?"Pastoral Call":entry.callerName)+" - "+entry.date;var body="CONCIERGE ENQUIRY NOTE\n================================\n";body+="Date: "+entry.date+" at "+entry.time+"\n";body+="Concierge: "+entry.concierge+"\n";body+="Brand: "+entry.brand+"\n";body+="Category: "+entry.cat+"\n";body+="Urgency: "+entry.urgency+"\n\n";if(!entry.isPastoral){body+="CALLER DETAILS\n------------------------\n";body+="Name: "+entry.callerName+"\n";if(entry.callerPhone)body+="Phone: "+entry.callerPhone+"\n";if(entry.callerEmail)body+="Email: "+entry.callerEmail+"\n";body+="Status: "+entry.callerStatus+"\n\n";}body+="NOTES\n------------------------\n"+entry.notes+"\n\n";body+="================================\nConcierge Command Centre - People of The Way";window.open("https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(to)+"&su="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body),"_blank");clearLog();toast("Gmail opened - click Send");}  
-function endOfDay(){if(!S.log.length){toast("No calls logged today","e");return;}var body="END OF DAY CONCIERGE SUMMARY\n================================\n";body+="Date: "+td()+" | Total enquiries: "+S.log.length+"\n================================\n\n";S.log.forEach(function(e,i){body+=(i+1)+". "+e.time+" - "+e.brand+" / "+e.cat+"\n";body+=" Concierge: "+e.concierge+" | Urgency: "+e.urgency+"\n";if(!e.isPastoral)body+=" Caller: "+e.callerName+(e.callerPhone?" | "+e.callerPhone:"")+"\n";else body+=" Pastoral call - details withheld\n";if(e.notes)body+=" Notes: "+e.notes+"\n";if(e.recipName)body+=" Actioned to: "+e.recipName+"\n";body+="\n";});body+="================================\nConcierge Command Centre - People of The Way";var subj="Concierge Summary - "+td()+" - "+S.log.length+" enquiries";window.open("https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(S.sumEmail)+"&su="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body),"_blank");toast("Summary email opened");}  
-function renderHistory(){var el=ge("pn-history");var q=(ge("hist-search-inp")?ge("hist-search-inp").value:"").toLowerCase().trim();var items=S.allHistory;if(q)items=items.filter(function(h){return(h.callerName+h.callerPhone+h.notes+h.brand+h.cat).toLowerCase().indexOf(q)>=0;});var html="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;'><h2 style='font-size:18px;font-weight:bold;color:#1a1d23;'>Caller History</h2><input class='inp' id='hist-search-inp' placeholder='Search by name, phone or notes...' oninput='renderHistory()' style='width:260px;' /></div>";if(!items.length){html+="<div style='text-align:center;padding:40px;color:#a0a8b5;'>"+(q?"No matching records found.":"No calls logged yet.")+"</div>";}else{items.slice(0,100).forEach(function(h){html+="<div class='hi-item' onclick='showHistDetail(\""+h.id+"\")'>";html+="<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;'><span style='font-size:13px;font-weight:bold;color:#1a1d23;'>"+h.callerName+"</span><span style='font-size:10px;color:#a0a8b5;'>"+h.date+" "+h.time+"</span></div>";html+="<div style='font-size:10px;color:#7a8090;'>"+h.brand+" - "+h.cat+" - "+h.urgency+"</div>";if(h.notes)html+="<div style='font-size:11px;color:#4a5060;margin-top:4px;'>"+(h.notes.length>100?h.notes.slice(0,100)+"...":h.notes)+"</div>";html+="</div>";});}el.innerHTML=html;}  
-function showHistDetail(id){var h=S.allHistory.filter(function(x){return x.id===id;})[0];if(!h)return;ge("hist-t").textContent=h.callerName;var b="<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;'>";b+="<div><div class='flabel'>Date and Time</div><div style='font-size:13px;'>"+h.date+" at "+h.time+"</div></div>";b+="<div><div class='flabel'>Concierge</div><div style='font-size:13px;'>"+h.concierge+"</div></div>";b+="<div><div class='flabel'>Phone</div><div style='font-size:13px;'>"+(h.callerPhone||"-")+"</div></div>";b+="<div><div class='flabel'>Email</div><div style='font-size:13px;'>"+(h.callerEmail||"-")+"</div></div>";b+="<div><div class='flabel'>Brand</div><div style='font-size:13px;'>"+h.brand+"</div></div>";b+="<div><div class='flabel'>Urgency</div><div style='font-size:13px;'>"+h.urgency+"</div></div>";b+="</div>";if(h.notes)b+="<div class='flabel'>Notes</div><div style='font-size:13px;color:#4a5060;line-height:1.7;background:#f8f9fb;padding:12px;border-radius:8px;margin-bottom:12px;'>"+h.notes+"</div>";if(h.recipName)b+="<div style='font-size:12px;color:#7a8090;margin-bottom:12px;'>Actioned to: "+h.recipName+"</div>";b+="<button class='btn btn-p btn-sm' style='background:#ee1c25;' onclick='prefillFromHist(\""+h.id+"\")'>Log Follow-Up Call</button>";ge("hist-body").innerHTML=b;showMod("mod-history");}  
-function prefillFromHist(id){var h=S.allHistory.filter(function(x){return x.id===id;})[0];if(!h)return;hideMod("mod-history");ST("log");setTimeout(function(){if(ge("l-name"))ge("l-name").value=h.callerName||"";if(ge("l-phone"))ge("l-phone").value=h.callerPhone||"";if(ge("l-email"))ge("l-email").value=h.callerEmail||"";if(ge("l-cat"))ge("l-cat").value=h.cat||"";var bd=ge("l-brand");if(bd){for(var i=0;i<bd.options.length;i++){if(bd.options[i].value===h.bId){bd.selectedIndex=i;break;}}}checkPas();updateSMSPrev();toast("Caller details pre-filled");},80);}  
-var _selQS=null;var _qsFilter="all";  
-function renderQS(){var el=ge("pn-quicksend");var filterBtns="<button class='lang-btn"+(_qsFilter==="all"?" active":"")+"' onclick='filterQS(\"all\")'>All</button>";var bIds=[];S.scripts.forEach(function(s){if(bIds.indexOf(s.bId)<0)bIds.push(s.bId);});bIds.forEach(function(bId){var bc=S.brands[bId]||{name:bId};filterBtns+="<button class='lang-btn"+(_qsFilter===bId?" active":"")+"' onclick='filterQS(\""+bId+"\")'>"+ bc.name+"</button>";});var links=_qsFilter==="all"?S.quickLinks:S.quickLinks.filter(function(l){return l.brand===_qsFilter;});var linkHtml="";links.forEach(function(link){var bc=S.brands[link.brand]||{name:link.brand,accent:"#888"};var isSel=_selQS&&_selQS.id===link.id;var border=isSel?"border-color:"+bc.accent+";background:"+bc.accent+"10;":"";linkHtml+="<div style='padding:12px 14px;border-radius:8px;cursor:pointer;border:2px solid #dde0e5;"+border+"margin-bottom:8px;' onclick='selQS(\""+link.id+"\")'>";linkHtml+="<div style='font-size:12px;font-weight:bold;color:#1a1d23;margin-bottom:3px;'>"+link.label+"</div>";linkHtml+="<div style='font-size:10px;color:#7a8090;'>"+link.desc+"</div>";linkHtml+="<div style='font-size:10px;color:"+bc.accent+";margin-top:4px;'>"+link.url.replace("https://","")+"</div>";linkHtml+="</div>";});var prevHtml="";if(_selQS){var name=(ge("qs-name")?ge("qs-name").value:"")||"there";var bc2=S.brands[_selQS.brand]||{name:_selQS.brand};var prev="Hi "+name+",\n\nGreat chatting with you today! As promised, here is the link you were after:\n\n"+_selQS.label+"\n"+_selQS.url+"\n\n"+_selQS.desc+"\n\nPlease do not hesitate to reach out if you have any other questions.\n\nWarm regards,\n"+(S.concierge||"The Team")+"\n"+bc2.name+" - People of The Way";prevHtml="<div class='card'><span class='clabel'>Email Preview</span><div style='background:#f8f9fb;border:1px solid #dde0e5;border-radius:8px;padding:16px;font-size:13px;color:#4a5060;line-height:1.8;white-space:pre-wrap;'>"+prev+"</div><div style='display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;'><button class='btn btn-p' style='background:#ee1c25;' onclick='sendQS()'>Send Email Now</button><button class='btn btn-o' style='border-color:#c8ccd3;color:#7a8090;' onclick='copyQS()'>Copy Link Only</button><button class='btn btn-o' style='border-color:#c8ccd3;color:#7a8090;' onclick='clearQS()'>Clear</button></div><div style='font-size:11px;color:#a0a8b5;margin-top:8px;'>Opens Gmail in a new tab - click Send while caller is still on the phone.</div></div>";}el.innerHTML="<h2 style='font-size:18px;font-weight:bold;margin-bottom:8px;color:#1a1d23;'>Send a Link While on the Phone</h2><p style='font-size:13px;color:#7a8090;margin-bottom:20px;'>Enter caller email, pick a link, hit Send - it lands in their inbox before they hang up.</p><div class='card'><span class='clabel'>Caller Details</span><div class='fgrid'><div><div class='flabel'>Caller First Name</div><input class='inp' id='qs-name' placeholder='e.g. Sarah' oninput='renderQS()' /></div><div><div class='flabel'>Caller Email Address</div><input class='inp' id='qs-email' placeholder='sarah@example.com' /></div></div></div><div class='card'><span class='clabel'>Choose a Link to Send</span><div class='lang-bar' style='margin-bottom:16px;'>"+filterBtns+"</div><div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;'>"+linkHtml+"</div><div style='margin-top:14px;text-align:right;'><button class='btn btn-o btn-sm' style='border-color:#c8ccd3;color:#7a8090;' onclick='showMod(\"mod-addlink\")'>+ Add Custom Link</button></div></div>"+prevHtml;}  
-function filterQS(brand){_qsFilter=brand;renderQS();}  
-function selQS(id){_selQS=S.quickLinks.filter(function(l){return l.id===id;})[0];renderQS();}  
-function sendQS(){var email=ge("qs-email")?ge("qs-email").value.trim():"";if(!email){toast("Please enter the caller email address","e");return;}if(!_selQS){toast("Please select a link to send","e");return;}var name=(ge("qs-name")?ge("qs-name").value.trim():"")||"there";var bc=S.brands[_selQS.brand]||{name:_selQS.brand};var subj=_selQS.label+" - "+bc.name;var body="Hi "+name+",\n\nGreat chatting with you today! As promised, here is the link you were after:\n\n"+_selQS.label+"\n"+_selQS.url+"\n\n"+_selQS.desc+"\n\nPlease do not hesitate to reach out if you have any other questions - we are always happy to help.\n\nWarm regards,\n"+(S.concierge||"The Team")+"\n"+bc.name+" - People of The Way";window.open("https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(email)+"&su="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body),"_blank");toast("Gmail opened - click Send while they are still on the phone");}  
-function copyQS(){if(_selQS)navigator.clipboard.writeText(_selQS.url).then(function(){toast("Link copied");});}  
-function clearQS(){_selQS=null;renderQS();}  
-function addQuickLink(){var lbl=ge("al-lbl")?ge("al-lbl").value.trim():"";var url=ge("al-url")?ge("al-url").value.trim():"";var desc=ge("al-desc")?ge("al-desc").value.trim():"";var brand=ge("al-brand")?ge("al-brand").value:"other";if(!lbl||!url){toast("Please enter a label and URL","e");return;}S.quickLinks.push({id:gid(),brand:brand,label:lbl,url:url,desc:desc});lss("ccc-ql",JSON.stringify(S.quickLinks));hideMod("mod-addlink");if(ge("al-lbl"))ge("al-lbl").value="";if(ge("al-url"))ge("al-url").value="";if(ge("al-desc"))ge("al-desc").value="";renderQS();toast(lbl+" added");}  
-function renderSettings(){var el=ge("pn-settings");var vHtml="";S.vols.forEach(function(v,i){vHtml+="<li class='sitem'><span style='font-size:13px;'>"+v+"</span><button class='btn btn-sm' style='background:transparent;border:none;color:#cc3333;cursor:pointer;' onclick='removeVol("+i+")'>Remove</button></li>";});var tHtml="";S.team.forEach(function(m,i){tHtml+="<li class='sitem'><div><div style='font-size:13px;'>"+m.name+"</div><div style='font-size:11px;color:#7a8090;'>"+m.email+"</div></div><button class='btn btn-sm' style='background:transparent;border:none;color:#cc3333;cursor:pointer;' onclick='removeTeam("+i+")'>Remove</button></li>";});var lHtml="";S.langs.forEach(function(l,i){lHtml+="<li class='sitem'><span style='font-size:13px;'>"+l+(l==="English"?" (default)":"")+"</span>"+(l!=="English"?"<button class='btn btn-sm' style='background:transparent;border:none;color:#cc3333;cursor:pointer;' onclick='removeLang("+i+")'>Remove</button>":"")+"</li>";});el.innerHTML="<h2 style='font-size:18px;font-weight:bold;margin-bottom:24px;color:#1a1d23;'>Settings</h2><div class='card'><span class='clabel'>Concierge Volunteers</span><div style='font-size:12px;color:#7a8090;margin-bottom:14px;'>People shown on the sign-in screen</div><ul class='slist'>"+vHtml+"</ul><div style='display:flex;gap:8px;margin-top:12px;'><input class='inp' id='new-vol' placeholder='Volunteer name...' style='flex:1;' /><button class='btn btn-p btn-sm' style='background:#ee1c25;' onclick='addVol()'>Add</button></div></div><div class='card'><span class='clabel'>Team Members (Email Recipients)</span><ul class='slist'>"+tHtml+"</ul><div style='display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;'><input class='inp' id='new-tname' placeholder='Name...' style='flex:1;min-width:120px;' /><input class='inp' id='new-temail' placeholder='email@ourchurch.org.au' style='flex:2;min-width:160px;' /><button class='btn btn-p btn-sm' style='background:#ee1c25;' onclick='addTeam()'>Add</button></div></div><div class='card'><span class='clabel'>Summary and Urgent Email Recipient</span><div style='display:flex;gap:8px;'><input class='inp' id='sum-email' value='"+S.sumEmail+"' style='flex:1;' /><button class='btn btn-p btn-sm' style='background:#ee1c25;' onclick='saveSumEmail()'>Save</button></div></div><div class='card'><span class='clabel'>Languages</span><div style='font-size:12px;color:#7a8090;margin-bottom:14px;'>Add languages for CALD communities - edit scripts to add translations</div><ul class='slist'>"+lHtml+"</ul><div style='display:flex;gap:8px;margin-top:12px;'><input class='inp' id='new-lang' placeholder='e.g. Spanish, Mandarin, Karen...' style='flex:1;' /><button class='btn btn-p btn-sm' style='background:#7B4F9E;' onclick='addLang()'>Add</button></div></div><div class='card'><span class='clabel'>Drive Sync</span><button class='btn btn-p btn-sm' style='background:#2C5F2E;' onclick='syncDrive()'>Save All to Drive Now</button></div>";}  
-function addVol(){var n=ge("new-vol")?ge("new-vol").value.trim():"";if(!n)return;S.vols.push(n);ge("new-vol").value="";renderSettings();buildSI();toast(n+" added");}  
-function removeVol(i){S.vols.splice(i,1);renderSettings();buildSI();}  
-function addTeam(){var n=ge("new-tname")?ge("new-tname").value.trim():"";var e=ge("new-temail")?ge("new-temail").value.trim():"";if(!n||!e)return;S.team.push({name:n,email:e});ge("new-tname").value="";ge("new-temail").value="";renderSettings();toast(n+" added");}  
-function removeTeam(i){S.team.splice(i,1);renderSettings();}  
-function saveSumEmail(){S.sumEmail=ge("sum-email")?ge("sum-email").value.trim():"";toast("Saved");}  
-function addLang(){var l=ge("new-lang")?ge("new-lang").value.trim():"";if(!l)return;if(S.langs.indexOf(l)>=0){toast("Already added","e");return;}S.langs.push(l);ge("new-lang").value="";renderSettings();toast(l+" added");}  
-function removeLang(i){S.langs.splice(i,1);renderSettings();}  
-function render(){var ac=(S.brands[S.activeBrand]||{accent:"#ee1c25"}).accent;ge("app-ti").style.color=ac;renderSidebar();renderScriptView();}  
-document.addEventListener("keydown",function(e){if(e.key==="Enter"){var si=ge("si-inp");if(si&&document.activeElement===si)signIn(si.value);}});  
-</script>  
-</body>  
+function renderTpls(){
+  return '<div class="page-header"><div class="page-title">Templates</div></div>'+
+    '<div class="tpl-grid">'+TEMPLATES.map(function(t){
+      return '<div class="tpl-card"><div class="tpl-icon">'+t.icon+'</div>'+
+        '<div class="tpl-name">'+h(t.name)+'</div>'+
+        '<div class="tpl-desc">'+h(t.desc)+'</div>'+
+        '<div class="tpl-cnt">'+t.tasks.length+' tasks included</div>'+
+        '<button class="tpl-btn" onclick="openProjectFromTemplate(\''+t.id+'\')">Use Template</button></div>';
+    }).join('')+'</div>';
+}
+
+function renderSQ(){
+  var links=[{icon:'🏠',label:'Dashboard',sub:'Main account',url:'https://account.squarespace.com'},{icon:'📄',label:'Pages',sub:'Manage pages',url:'https://account.squarespace.com/website/pages'},{icon:'📝',label:'Blog',sub:'Posts & drafts',url:'https://account.squarespace.com/website/blog'},{icon:'🛍',label:'Commerce',sub:'Products & orders',url:'https://account.squarespace.com/commerce'},{icon:'📈',label:'Analytics',sub:'Traffic & sales',url:'https://account.squarespace.com/analytics'}];
+  var html='<div class="page-header"><div class="page-title">🟦 Squarespace</div></div>'+
+    '<div class="section-header"><div class="section-title">Quick Access</div></div>'+
+    '<div class="sq-links">'+links.map(function(l){return '<a href="'+l.url+'" target="_blank" class="sq-link"><div class="sq-li">'+l.icon+'</div><div class="sq-ll">'+l.label+'</div><div class="sq-ls">'+l.sub+'</div></a>';}).join('')+'</div>';
+
+  if(!SCRIPT_URL){
+    html+='<div class="setup-banner">'+
+      '<strong>⚙️ One-time Google Sheets setup required</strong><br>'+
+      'To sync data across all computers, you need to connect Google Sheets by setting up a free Google Apps Script.<br><br>'+
+      '<strong>Step 1:</strong> <a href="https://script.google.com" target="_blank">Open script.google.com</a> → New Project<br>'+
+      '<strong>Step 2:</strong> Delete all existing code and paste the script from the file you downloaded called <strong>ProjectOS-GoogleScript.js</strong><br>'+
+      '<strong>Step 3:</strong> Click <strong>Deploy → New Deployment → Web App</strong><br>'+
+      '<strong>Step 4:</strong> Set "Execute as" = <strong>Me</strong> · "Who has access" = <strong>Anyone</strong> → Deploy<br>'+
+      '<strong>Step 5:</strong> Copy the Web App URL and paste it below:<br><br>'+
+      '<input id="script-url-input" class="fi" placeholder="https://script.google.com/macros/s/..." style="margin-bottom:8px">'+
+      '<button class="btn btn-primary" onclick="saveScriptUrl()" style="font-size:12px;padding:6px 14px">Save & Connect</button>'+
+      '</div>';
+  } else {
+    html+='<div style="background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius);padding:16px;font-size:13px;margin-bottom:16px">'+
+      '<strong style="color:var(--green)">✅ Google Sheets connected</strong><br>'+
+      '<span style="color:var(--text3);font-size:12px">All data syncs automatically to your shared Google Sheet.</span><br>'+
+      '<a href="'+SHEET_LINK+'" target="_blank" style="color:var(--accent);font-size:12px">Open Google Sheet →</a></div>'+
+      '<button class="tb-btn" onclick="resetScriptUrl()" style="font-size:12px">Disconnect / Change Script URL</button>';
+  }
+  return html;
+}
+
+function saveScriptUrl(){
+  var inp=document.getElementById('script-url-input');
+  if(!inp||!inp.value.trim()){alert('Please paste your Google Apps Script URL.');return;}
+  SCRIPT_URL=inp.value.trim();
+  localStorage.setItem('pos_script_url',SCRIPT_URL);
+  toast('Connected! Loading data...','ok');
+  loadData(function(){renderAll();});
+}
+
+function resetScriptUrl(){
+  if(!confirm('Disconnect Google Sheets? Data stays locally.'))return;
+  SCRIPT_URL='';localStorage.removeItem('pos_script_url');renderAll();
+}
+
+// ── DETAIL PANEL ──
+function selectProj(id){
+  ST.project=id;
+  var p=gp(id);if(!p)return;
+  var dp=document.getElementById('detail-panel');
+  dp.classList.remove('hidden');
+  renderDetail(p);
+}
+
+function renderDetail(p){
+  var dp=document.getElementById('detail-panel');if(!dp)return;
+  var e=ge(p.entity);
+  var tasks=p.tasks||[];var dn=tasks.filter(function(t){return t.done;}).length;
+  var pct=tasks.length?Math.round(dn/tasks.length*100):0;
+  var html='<div class="dp-hdr"><div>'+
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+      '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+spill(p.status)+
+    '</div>'+
+    '<div class="dp-title">'+h(p.name)+'</div>'+
+    '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
+    '<button class="dp-close" onclick="closeDetail()">✕</button></div>'+
+    '<div class="dp-body">'+
+    '<div class="dp-sec"><div class="dp-sec-title">Progress</div>'+
+      '<div class="prog-lbl"><span>'+pct+'%</span><span>'+dn+'/'+tasks.length+' tasks</span></div>'+
+      '<div class="prog-track"><div class="prog-fill" style="width:'+pct+'%"></div></div></div>';
+  if(p.desc)html+='<div class="dp-sec"><div class="dp-sec-title">Description</div><div style="font-size:13px;color:var(--text2);line-height:1.6">'+h(p.desc)+'</div></div>';
+  html+='<div class="dp-sec"><div class="dp-sec-title">Status</div>'+
+    '<select class="st-sel" onchange="updateStatus(\''+p.id+'\',this.value)">'+
+    ['planning','active','hold','risk','done'].map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('')+
+    '</select></div>';
+  html+='<div class="dp-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
+    '<div class="dp-sec-title" style="margin:0">Tasks</div>'+
+    '<button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="openAddTask(\''+p.id+'\')">+ Add</button></div>';
+  if(!tasks.length){
+    html+='<div style="padding:12px;text-align:center;color:var(--text4);font-size:12px;border:1px solid var(--border);border-radius:6px">No tasks yet</div>';
+  }else{
+    html+=tasks.map(function(t){
+      var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
+      var avs=asgn.map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;margin-left:-3px;border:2px solid var(--bg2)" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('');
+      var names=asgn.map(function(id){return gm(id).name.split(' ')[0];}).join(', ')||'Unassigned';
+      var dueStr='';
+      if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<new Date();dueStr='<span class="task-due'+(od?' overdue':'')+'">📅 '+(od?'Overdue · ':'')+t.due+'</span>';}
+      var prog=t.progress||0;
+      var pc=t.pri==='high'?'var(--red)':t.pri==='med'?'var(--orange)':'var(--green)';
+      return '<div class="task-card">'+
+        '<div class="task-card-top">'+
+          '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+
+          (t.done?'✓':'')+
+          '</div>'+
+          '<div class="task-card-body">'+
+            '<div class="task-card-title'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
+            '<div class="task-card-meta">'+
+              (t.cat?'<span class="tcat">'+h(t.cat)+'</span>':'')+
+              '<span style="font-size:10px;font-weight:700;color:'+pc+'">'+t.pri.toUpperCase()+'</span>'+
+              dueStr+
+            '</div>'+
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+              '<div class="task-assignees" style="padding-left:4px">'+avs+'</div>'+
+              '<span style="font-size:11px;color:var(--text3)">'+names+'</span>'+
+            '</div>'+
+            '<div class="task-prog-wrap">'+
+              '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
+              '<input class="task-prog-input" type="number" min="0" max="100" value="'+prog+'" onchange="updateTaskProg(\''+p.id+'\',\''+t.id+'\',this.value)" title="% complete">'+
+              '<span style="font-size:11px;color:var(--text4)">%</span>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  html+='</div>';
+  var notes=p.notes||[];
+  html+='<div class="dp-sec"><div class="dp-sec-title">Notes</div>'+
+    '<div class="note-list">'+notes.slice().reverse().map(function(n){
+      return '<div class="note-item"><span class="note-who">'+h(n.who)+'</span><span class="note-when">'+h(n.when)+'</span><div class="note-txt">'+h(n.text)+'</div></div>';
+    }).join('')+(notes.length===0?'<div style="font-size:12px;color:var(--text4)">No notes yet</div>':'')+'</div>'+
+    '<textarea class="note-area" id="note-ta-'+p.id+'" placeholder="Add a note..."></textarea>'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;margin-top:6px" onclick="addNote(\''+p.id+'\')">Add Note</button></div></div>';
+  dp.innerHTML=html;
+}
+
+function exportData(){
+  var json=JSON.stringify(DB,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='ProjectOS-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Data exported as JSON file','ok');
+}
+
+function importData(){
+  var inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='.json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var parsed=JSON.parse(ev.target.result);
+        if(!parsed.entities||!parsed.projects){alert('Invalid ProjectOS backup file.');return;}
+        if(!confirm('This will replace all current data with the imported data. Continue?'))return;
+        DB=parsed;
+        mutate();
+        toast('Data imported successfully','ok');
+      }catch(e){alert('Could not read file — make sure it is a valid ProjectOS JSON export.');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function updateTaskProg(pid,tid,val){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  t.progress=Math.min(100,Math.max(0,parseInt(val)||0));
+  if(t.progress===100)t.done=true;
+  var fill=document.getElementById('tpf-'+tid);if(fill)fill.style.width=t.progress+'%';
+  var dn=p.tasks.filter(function(x){return x.done||(x.progress||0)===100;}).length;
+  p.progress=p.tasks.length?Math.round(p.tasks.reduce(function(s,x){return s+(x.progress||0);},0)/p.tasks.length):0;
+  mutate();
+}
+
+function closeDetail(){var dp=document.getElementById('detail-panel');if(dp){dp.classList.add('hidden');dp.innerHTML='';}ST.project=null;}
+
+// ── MUTATIONS ──
+function toggleTask(pid,tid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  t.done=!t.done;
+  var dn=p.tasks.filter(function(x){return x.done;}).length;
+  p.progress=p.tasks.length?Math.round(dn/p.tasks.length*100):0;
+  if(ST.project===pid)renderDetail(p);
+  mutate();
+}
+
+function updateStatus(pid,val){var p=gp(pid);if(!p)return;p.status=val;mutate();}
+
+function addNote(pid){
+  var p=gp(pid);if(!p)return;
+  var ta=document.getElementById('note-ta-'+pid);
+  if(!ta||!ta.value.trim())return;
+  if(!p.notes)p.notes=[];
+  p.notes.push({who:'Team',when:new Date().toLocaleString(),text:ta.value.trim()});
+  renderDetail(p);mutate();toast('Note saved','ok');
+}
+
+function delProj(pid){
+  if(!confirm('Delete this project? Cannot be undone.'))return;
+  DB.projects=DB.projects.filter(function(p){return p.id!==pid;});
+  mutate();toast('Deleted','ok');
+}
+
+// ── MODALS ──
+function openNewProject(tplId){
+  var eo=DB.entities.map(function(e){return '<option value="'+e.id+'">'+h(e.name)+'</option>';}).join('');
+  var mo=DB.members.map(function(m){return '<option value="'+m.id+'">'+h(m.name)+'</option>';}).join('');
+  document.getElementById('modal-title').textContent=tplId?'New Project from Template':'New Project';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Project Name *</label><input class="fi" id="np-nm" placeholder="e.g. Website Redesign"></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Entity</label><select class="fs" id="np-ent">'+eo+'</select></div>'+
+      '<div><label class="fl">Lead</label><select class="fs" id="np-lead">'+mo+'</select></div></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Status</label><select class="fs" id="np-stat"><option value="planning">Planning</option><option value="active">Active</option></select></div>'+
+      '<div><label class="fl">Priority</label><select class="fs" id="np-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Due Date</label><input class="fi" id="np-due" type="date"></div>'+
+      '<div><label class="fl">Progress %</label><input class="fi" id="np-prog" type="number" min="0" max="100" value="0"></div></div>'+
+    '<div class="fr"><label class="fl">Description</label><textarea class="fta" id="np-desc" placeholder="Brief description..."></textarea></div>';
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('np-nm').value.trim();
+    if(!nm){alert('Please enter a project name.');return;}
+    var tasks=[];
+    if(tplId){var tpl=TEMPLATES.find(function(t){return t.id===tplId;});if(tpl)tasks=tpl.tasks.map(function(t){return {id:uid(),title:t.title,cat:t.cat,pri:t.pri,done:false,assign:document.getElementById('np-lead').value};});}
+    DB.projects.push({id:uid(),name:nm,entity:document.getElementById('np-ent').value,status:document.getElementById('np-stat').value,priority:document.getElementById('np-pri').value,progress:parseInt(document.getElementById('np-prog').value)||0,due:document.getElementById('np-due').value||null,lead:document.getElementById('np-lead').value,members:[document.getElementById('np-lead').value],desc:document.getElementById('np-desc').value.trim(),tasks:tasks,notes:[],docs:[]});
+    closeModal();mutate();toast('Project created & saved','ok');
+  };
+  showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
+}
+
+function openAddTask(pid){
+  var p=gp(pid);if(!p)return;
+  var mCBs=DB.members.map(function(m){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:var(--text2)">'+
+      '<input type="checkbox" class="nt-assign-cb" value="'+m.id+'" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">'+
+      '<span class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+h(m.initials)+'</span>'+
+      h(m.name)+'</label>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Add Task';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="nt-title" placeholder="e.g. Write homepage copy"></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Category</label><input class="fi" id="nt-cat" placeholder="e.g. Design"></div>'+
+      '<div><label class="fl">Priority</label><select class="fs" id="nt-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div>'+
+    '</div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Deadline</label><input class="fi" id="nt-due" type="date"></div>'+
+      '<div><label class="fl">Est. Hours</label><input class="fi" id="nt-hrs" type="number" min="0" placeholder="e.g. 4"></div>'+
+    '</div>'+
+    '<div class="fr"><label class="fl">Assign To (select all responsible)</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+mCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="nt-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>';
+  document.getElementById('modal-submit').onclick=function(){
+    var title=document.getElementById('nt-title').value.trim();
+    if(!title){alert('Please enter a task title.');return;}
+    var cbs=document.querySelectorAll('.nt-assign-cb:checked');
+    var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    if(!p.tasks)p.tasks=[];
+    p.tasks.push({
+      id:uid(),
+      title:title,
+      cat:document.getElementById('nt-cat').value.trim(),
+      pri:document.getElementById('nt-pri').value,
+      due:document.getElementById('nt-due').value||null,
+      hrs:document.getElementById('nt-hrs').value||null,
+      notes:document.getElementById('nt-notes').value.trim(),
+      done:false,
+      progress:0,
+      assignees:assignees
+    });
+    closeModal();if(ST.project===pid)renderDetail(p);mutate();toast('Task added & saved','ok');
+  };
+  showModal();
+}
+
+
+function openNewMember(){
+  var eoCBs=DB.entities.map(function(e){
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:var(--text2)">'+
+      '<input type="checkbox" class="nm-ent-cb" value="'+e.id+'" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">'+
+      '<span class="av" style="background:'+e.color+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+h(e.short)+'</span>'+
+      h(e.name)+'</label>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Add Team Member';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" placeholder="e.g. Sam Jones"></div>'+
+    '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" placeholder="sam@company.com"></div>'+
+    '<div class="fr"><label class="fl">Entities (select all that apply)</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
+    COLORS.map(function(c,i){return '<div class="co'+(i===0?' sel':'')+'" style="background:'+c+'" onclick="pickCol(this,\''+c+'\')"></div>';}).join('')+'</div></div>';
+  window._col=COLORS[0];
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('nm-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    var cbs=document.querySelectorAll('.nm-ent-cb:checked');
+    var entities=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    if(!entities.length){alert('Please select at least one entity.');return;}
+    var ini=nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    DB.members.push({id:uid(),name:nm,email:document.getElementById('nm-em').value.trim(),entities:entities,color:window._col||COLORS[0],initials:ini});
+    closeModal();mutate();toast('Member added & saved','ok');
+  };
+  showModal();
+}
+
+
+function openNewEntity(){
+  document.getElementById('modal-title').textContent='Add Entity';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Entity Name *</label><input class="fi" id="ne-nm" placeholder="e.g. Coastal Holdings"></div>'+
+    '<div class="fr"><label class="fl">Short Code (2-3 letters)</label><input class="fi" id="ne-sh" placeholder="e.g. CH" maxlength="3" style="text-transform:uppercase"></div>'+
+    '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
+    COLORS.map(function(c,i){return '<div class="co'+(i===0?' sel':'')+'" style="background:'+c+'" onclick="pickCol(this,\''+c+'\')"></div>';}).join('')+'</div></div>';
+  window._col=COLORS[0];
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('ne-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
+    var sh=(document.getElementById('ne-sh').value.trim().toUpperCase()||nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase());
+    DB.entities.push({id:uid(),name:nm,short:sh,color:window._col||COLORS[0]});
+    closeModal();mutate();toast('Entity added & saved','ok');
+  };
+  showModal();
+}
+
+function openProjectFromTemplate(id){openNewProject(id);}
+function pickCol(el,c){window._col=c;document.querySelectorAll('.co').forEach(function(d){d.classList.remove('sel');});el.classList.add('sel');}
+function showModal(){document.getElementById('modal-overlay').classList.add('show');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show');}
+function closeModalOvl(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+
+function toast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=type==='ok'?'#22c55e':type==='err'?'#ef4444':'#111827';
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3000);
+}
+
+// ── SQUARESPACE ISOLATION ──
+(function(){
+  var inEd=(window.self!==window.top||document.body.classList.contains('sqs-edit-mode-active')||document.body.classList.contains('sqs-edit-mode')||window.location.href.indexOf('/config/')>-1||window.location.search.indexOf('editMode')>-1);
+  if(inEd)return;
+  var r=document.getElementById('pos-root');
+  if(r&&r.parentNode!==document.body)document.body.appendChild(r);
+  r.style.setProperty('position','fixed','important');
+  r.style.setProperty('top','0','important');
+  r.style.setProperty('left','0','important');
+  r.style.setProperty('right','0','important');
+  r.style.setProperty('bottom','0','important');
+  r.style.setProperty('width','100vw','important');
+  r.style.setProperty('height','100vh','important');
+  r.style.setProperty('z-index','2147483647','important');
+  function hc(){['header','footer','nav','.Header','.Footer','#header','#footer','.site-header','.site-footer','.sqs-announcement-bar','.sqs-announcement-bar-dropzone','[data-section-theme]','.header-nav','.page-section','.index-section','.sections'].forEach(function(s){document.querySelectorAll(s).forEach(function(el){if(!el.closest('#pos-root'))el.style.setProperty('display','none','important');});});}
+  hc();setTimeout(hc,500);setTimeout(hc,1500);
+})();
+
+// ── START ──
+// Load from local storage instantly
+try {
+  var backup = localStorage.getItem('pos_db');
+  if(backup) { DB = JSON.parse(backup); } else { defaults(); }
+} catch(e) { defaults(); }
+
+renderAll();
+
+// Sync with Google Sheet silently after 2 seconds
+setTimeout(function(){
+  if(!SCRIPT_URL) return;
+  setSS('syncing','Syncing...');
+  fetch(SCRIPT_URL + '?t=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.ok && res.data && res.data.projects){
+        DB = res.data;
+        localSave();
+        setSS('ok','Synced ' + new Date().toLocaleTimeString());
+        renderAll();
+      } else { setSS('ok','Local data'); }
+    })
+    .catch(function(){ setSS('error','Offline'); });
+}, 2000);
+</script>
+</body>
 </html>
- 
