@@ -1270,7 +1270,20 @@ function contactWhatsApp(phone, body){
 
 function openCLink(btn){
   var url=decodeURIComponent(btn.getAttribute('data-url')||'');
-  if(url)window.open(url,'_blank');
+  if(!url)return;
+  if(url.indexOf('mailto:')===0){
+    var parts=url.replace('mailto:','').split('?');
+    var to=parts[0];
+    var params=parts[1]||'';
+    var sub='';var bod='';
+    params.split('&').forEach(function(p){
+      if(p.indexOf('subject=')===0)sub=p.replace('subject=','');
+      if(p.indexOf('body=')===0)bod=p.replace('body=','');
+    });
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+to+'&su='+sub+'&body='+bod,'_blank');
+  } else {
+    window.open(url,'_blank');
+  }
 }
 
 function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
