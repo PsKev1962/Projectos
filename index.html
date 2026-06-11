@@ -949,7 +949,8 @@ function renderDetail(p){
                 '<div class="task-assignees" style="padding-left:4px">'+avs+'</div>'+
                 '<span style="font-size:11px;color:var(--text3)">'+names+'</span>'+
               '</div>'+
-              asgn.map(function(id){return memberContactBtns(gm(id),t.title,p.name);}).join('')+
+              (t.docUrl?'<div style="margin:4px 0 6px"><a href="'+h(t.docUrl)+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">&#128196; '+h(t.docLabel||'View Document')+'</a></div>':'')+
+              asgn.map(function(id){return memberContactBtns(gm(id),t.title,p.name,t.docUrl,t.docLabel);}).join('')+
             '</div>'+
             '<div class="task-prog-wrap">'+
               '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
@@ -1135,7 +1136,10 @@ function openAddTask(pid){
     '</div>'+
     '<div class="fr"><label class="fl">Assign To (select all responsible)</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+mCBs+'</div></div>'+
-    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="nt-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>';
+    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="nt-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>'+
+    '<div class="fr"><label class="fl">Document / Link (optional)</label>'+
+      '<input class="fi" id="nt-doc-label" placeholder="e.g. Intake Form, Welcome Pack" style="margin-bottom:6px">'+
+      '<input class="fi" id="nt-doc-url" placeholder="https://drive.google.com/..."></div>';
   document.getElementById('modal-submit').onclick=function(){
     var title=document.getElementById('nt-title').value.trim();
     if(!title){alert('Please enter a task title.');return;}
@@ -1150,6 +1154,8 @@ function openAddTask(pid){
       due:document.getElementById('nt-due').value||null,
       hrs:document.getElementById('nt-hrs').value||null,
       notes:document.getElementById('nt-notes').value.trim(),
+      docLabel:document.getElementById('nt-doc-label').value.trim(),
+      docUrl:document.getElementById('nt-doc-url').value.trim(),
       done:false,
       progress:0,
       assignees:assignees
@@ -1262,20 +1268,29 @@ function contactWhatsApp(phone, body){
   window.open('https://wa.me/'+clean+'?text='+encoded);
 }
 
-function memberContactBtns(m, taskTitle, projName){
+function openCLink(btn){
+  var url=decodeURIComponent(btn.getAttribute('data-url')||'');
+  if(url)window.open(url,'_blank');
+}
+
+function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
   var subject = taskTitle ? 'Re: '+taskTitle+' ('+projName+')' : 'ProjectOS Update';
+  var docPart = (docLink) ? '\n\nDocument: '+(docLabel||'Link')+'\n'+docLink : '';
   var body = taskTitle
-    ? 'Hi '+m.name.split(' ')[0]+',\n\nJust following up on your task: '+taskTitle+'\nProject: '+projName+'\n\n'
+    ? 'Hi '+m.name.split(' ')[0]+',\n\nJust following up on your task: '+taskTitle+'\nProject: '+projName+docPart+'\n\n'
     : 'Hi '+m.name.split(' ')[0]+',\n\n';
-  var emailBtn = '<a class="cbtn cbtn-email" href="mailto:'+m.email+
-    '?subject='+encodeURIComponent(subject)+
-    '&body='+encodeURIComponent(body)+'" target="_blank">&#9993; Email</a>';
+  var _emailUrl = m.email ? 'mailto:'+m.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body) : '';
+  var _smsUrl = m.phone ? 'sms:'+m.phone+'?body='+encodeURIComponent(body) : '';
+  var _waUrl = m.phone ? 'https://wa.me/'+m.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(body) : '';
+  var emailBtn = m.email
+    ? '<button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">&#9993; Email</button>'
+    : '<span class="cbtn cbtn-email" style="opacity:.4;cursor:default" title="Add email to enable">&#9993; Email</span>';
   var smsBtn = m.phone
-    ? '<a class="cbtn cbtn-sms" href="sms:'+m.phone+'?body='+encodeURIComponent(body)+'" target="_blank">&#128172; SMS</a>'
+    ? '<button class="cbtn cbtn-sms" onclick="openCLink(this)" data-url="'+encodeURIComponent(_smsUrl)+'">&#128172; SMS</button>'
     : '<span class="cbtn cbtn-sms" style="opacity:.4;cursor:default" title="Add phone number to enable SMS">&#128172; SMS</span>';
+  var waUrl2 = m.phone ? 'https://wa.me/'+m.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(body) : '';
   var waBtn = m.phone
-    ? '<a class="cbtn cbtn-wa" href="https://wa.me/'+m.phone.replace(/[^0-9]/g,'')+
-      '?text='+encodeURIComponent(body)+'" target="_blank">&#128233; WhatsApp</a>'
+    ? '<button class="cbtn cbtn-wa" onclick="openCLink(this)" data-url="'+encodeURIComponent(_waUrl)+'">&#128233; WhatsApp</button>'
     : '<span class="cbtn cbtn-wa" style="opacity:.4;cursor:default" title="Add phone number to enable WhatsApp">&#128233; WhatsApp</span>';
   return '<div class="contact-btns">'+emailBtn+smsBtn+waBtn+'</div>';
 }
@@ -1322,9 +1337,9 @@ function renderSendLink(){
   var preview=buildSLPreview();
   var prevHtml='<div class="sl-card"><span class="sl-label">Message Preview</span>';
   if(preview){
-    prevHtml+='<div class="sl-preview">'+h(preview)+'</div>';
+    prevHtml+='<div class="sl-preview" id="sl-preview-text">'+h(preview)+'</div>';
   } else {
-    prevHtml+='<div style="color:var(--text3);font-size:13px;padding:10px 0;">Fill in recipient details and select a document above to preview the message.</div>';
+    prevHtml+='<div class="sl-preview" id="sl-preview-text" style="color:var(--text3);font-size:13px;padding:10px 0;">Fill in recipient details and select a document above to preview the message.</div>';
   }
   prevHtml+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">';
   prevHtml+='<button class="sl-btn sl-btn-email" onclick="sendSLEmail()">&#9993; Send Email</button>';
@@ -1335,13 +1350,20 @@ function renderSendLink(){
   var html='<div style="max-width:700px">';
   html+='<h2 style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)">Send a Link</h2>';
   html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email, SMS or WhatsApp while they are still on the phone.</p>';
+  var _slN=window._slName||'';var _slE=window._slEmail||'';var _slP=window._slPhone||'';
+  var _slOdL=window._slOdLabel||'';var _slOdU=window._slOdUrl||'';
   html+='<div class="sl-card"><span class="sl-label">Recipient Details</span>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">';
-  html+='<div><label class="sl-label">First Name</label><input class="sl-input" id="sl-name" placeholder="e.g. Sarah" oninput="refreshSLPreview()" /></div>';
-  html+='<div><label class="sl-label">Email Address</label><input class="sl-input" id="sl-email" placeholder="sarah@example.com" /></div>';
+  html+='<div><label class="sl-label">First Name</label><input class="sl-input" id="sl-name" placeholder="e.g. Sarah" value="'+h(_slN)+'" oninput="refreshSLPreview()" /></div>';
+  html+='<div><label class="sl-label">Email Address</label><input class="sl-input" id="sl-email" placeholder="sarah@example.com" value="'+h(_slE)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
-  html+='<div><label class="sl-label">Phone Number (SMS / WhatsApp)</label><input class="sl-input" id="sl-phone" placeholder="e.g. 0412 345 678" /></div>';
+  html+='<div><label class="sl-label">Phone Number (SMS / WhatsApp)</label><input class="sl-input" id="sl-phone" placeholder="e.g. 0412 345 678" value="'+h(_slP)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
+  html+='<div class="sl-card"><span class="sl-label">Once-off Document / Link (optional)</span>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  html+='<input class="sl-input" id="sl-onceoff-label" placeholder="Document name..." value="'+h(_slOdL)+'" oninput="refreshSLPreview()" />';
+  html+='<input class="sl-input" id="sl-onceoff-url" placeholder="https://drive.google.com/..." value="'+h(_slOdU)+'" oninput="refreshSLPreview()" />';
+  html+='</div></div>';
   html+='<div class="sl-card"><span class="sl-label">Choose a Document to Send</span>';
   html+=docList;
   html+='<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">';
@@ -1365,18 +1387,31 @@ function selectDoc(id){
 }
 
 function buildSLPreview(){
-  if(!window._selDoc)return '';
   var nameEl=document.getElementById('sl-name');
-  var name=nameEl?nameEl.value.trim():'';
+  var name=nameEl?nameEl.value.trim():(window._slName||'');
   if(!name)name='there';
   var doc=window._selDoc;
-  return 'Hi '+name+',\n\nGreat connecting with you today! Here is the document you were after:\n\n'+doc.label+'\n'+doc.url+'\n\nPlease do not hesitate to get in touch if you have any questions.\n\nWarm regards,\nThe Team';
+  var odLabel=(document.getElementById('sl-onceoff-label')||{}).value||(window._slOdLabel||'');
+  var odUrl=(document.getElementById('sl-onceoff-url')||{}).value||(window._slOdUrl||'');
+  var hasDoc=doc||(odLabel&&odUrl);
+  if(!hasDoc)return '';
+  var docLine=doc?(doc.label+'\n'+doc.url):(odLabel+'\n'+odUrl);
+  return 'Hi '+name+',\n\nGreat connecting with you today! Here is the document you were after:\n\n'+docLine+'\n\nPlease do not hesitate to get in touch if you have any questions.\n\nWarm regards,\nThe Team';
 }
 
 function refreshSLPreview(){
-  if(!window._selDoc)return;
-  var mi=document.getElementById('main-inner');
-  if(mi)mi.innerHTML=renderSendLink();
+  var nameEl=document.getElementById('sl-name');
+  var emailEl=document.getElementById('sl-email');
+  var phoneEl=document.getElementById('sl-phone');
+  var odLabelEl=document.getElementById('sl-onceoff-label');
+  var odUrlEl=document.getElementById('sl-onceoff-url');
+  if(nameEl)window._slName=nameEl.value;
+  if(emailEl)window._slEmail=emailEl.value;
+  if(phoneEl)window._slPhone=phoneEl.value;
+  if(odLabelEl)window._slOdLabel=odLabelEl.value;
+  if(odUrlEl)window._slOdUrl=odUrlEl.value;
+  var prev=document.getElementById('sl-preview-text');
+  if(prev)prev.textContent=buildSLPreview();
 }
 
 function addDoc(){
@@ -1401,36 +1436,50 @@ function removeDoc(i){
 
 function clearSL(){
   window._selDoc=null;
-  var ids=['sl-name','sl-email','sl-phone'];
+  window._slName='';window._slEmail='';window._slPhone='';
+  window._slOdLabel='';window._slOdUrl='';
+  var ids=['sl-name','sl-email','sl-phone','sl-onceoff-label','sl-onceoff-url'];
   for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.value='';}
+  var prev=document.getElementById('sl-preview-text');
+  if(prev)prev.textContent='Fill in recipient details and select a document above to preview the message.';
   var mi=document.getElementById('main-inner');
   if(mi)mi.innerHTML=renderSendLink();
 }
 
-function sendSLEmail(){
+function getSLFields(){
+  refreshSLPreview();
   var emailEl=document.getElementById('sl-email');
-  var email=emailEl?emailEl.value.trim():'';
-  if(!email){alert('Please enter an email address.');return;}
+  var phoneEl=document.getElementById('sl-phone');
+  return {
+    email:(emailEl?emailEl.value.trim():'')|| (window._slEmail||''),
+    phone:(phoneEl?phoneEl.value.trim():'')|| (window._slPhone||'')
+  };
+}
+
+function sendSLEmail(){
+  var f=getSLFields();
+  if(!f.email){alert('Please enter an email address.');return;}
   var body=buildSLPreview();
-  if(!body){alert('Please select a document first.');return;}
-  var subj=window._selDoc?window._selDoc.label:'Document Link';
-  window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
+  if(!body){alert('Please select a document or enter a once-off document link first.');return;}
+  var odLabel=(document.getElementById('sl-onceoff-label')||{}).value||(window._slOdLabel||'');
+  var subj=window._selDoc?window._selDoc.label:(odLabel||'Document Link');
+  window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(f.email)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
 }
 
 function sendSLSMS(){
-  var phoneEl=document.getElementById('sl-phone');
-  var phone=phoneEl?phoneEl.value.trim():'';
-  if(!phone){alert('Please enter a phone number.');return;}
+  var f=getSLFields();
+  if(!f.phone){alert('Please enter a phone number.');return;}
   var body=buildSLPreview();
-  window.open('sms:'+phone+'?body='+encodeURIComponent(body));
+  if(!body){alert('Please select a document or enter a once-off document link first.');return;}
+  window.open('sms:'+f.phone+'?body='+encodeURIComponent(body));
 }
 
 function sendSLWhatsApp(){
-  var phoneEl=document.getElementById('sl-phone');
-  var phone=phoneEl?phoneEl.value.trim():'';
-  if(!phone){alert('Please enter a phone number.');return;}
-  var clean=phone.replace(/[^0-9]/g,'');
+  var f=getSLFields();
+  if(!f.phone){alert('Please enter a phone number.');return;}
   var body=buildSLPreview();
+  if(!body){alert('Please select a document or enter a once-off document link first.');return;}
+  var clean=f.phone.replace(/[^0-9]/g,'');
   window.open('https://wa.me/'+clean+'?text='+encodeURIComponent(body),'_blank');
 }
 
