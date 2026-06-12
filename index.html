@@ -772,10 +772,7 @@ function renderTasks(){
     }).join('');
 
   var html='<div class="page-header"><div class="page-title">All Tasks</div>'+
-    '<div style="display:flex;align-items:center;gap:10px">'+
-      '<span style="font-size:13px;color:var(--text3)">'+shown.length+' tasks</span>'+
-      '<button class="tb-btn tb-btn-accent" onclick="openQuickAddTask()">+ Add Task</button>'+
-    '</div></div>';
+    '<span style="font-size:13px;color:var(--text3)">'+shown.length+' tasks</span></div>';
 
   // Status filters
   html+='<div class="task-filters">'+
@@ -815,7 +812,10 @@ function renderTasks(){
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
         '</div>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;padding-left:4px">'+avs+'</div>'+
+      '<div style="display:flex;align-items:center;gap:4px;padding-left:6px">'+avs+
+        '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit" style="font-size:11px;padding:2px 7px;opacity:0.6">&#9998;</button>'+
+        '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red);opacity:0.6">&#10005;</button>'+
+      '</div>'+
       '</div>';
   }).join('')+'</div>';
 }
@@ -1058,7 +1058,13 @@ function renderDetail(p){
           (t.done?'✓':'')+
           '</div>'+
           '<div class="task-card-body">'+
-            '<div class="task-card-title'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
+            '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:2px">'+
+              '<div class="task-card-title'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
+              '<div style="display:flex;gap:3px;flex-shrink:0">'+
+                '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit task" style="font-size:11px;padding:2px 7px">&#9998;</button>'+
+                '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete task" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red)">&#10005;</button>'+
+              '</div>'+
+            '</div>'+
             '<div class="task-card-meta">'+
               (t.cat?'<span class="tcat">'+h(t.cat)+'</span>':'')+
               '<span style="font-size:10px;font-weight:700;color:'+pc+'">'+t.pri.toUpperCase()+'</span>'+
@@ -1233,58 +1239,6 @@ function openNewProject(tplId){
   showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
 }
 
-function openQuickAddTask(){
-  if(!DB.projects.length){toast('Create a project first','err');return;}
-  var projOpts=DB.projects.map(function(p){
-    var e=ge(p.entity);
-    return '<option value="'+p.id+'">'+h(p.name)+' ('+h(e.short)+')</option>';
-  }).join('');
-  var mCBs=DB.members.map(function(m){
-    var precheck=ST.filterMember===m.id;
-    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:var(--text2)">'+
-      '<input type="checkbox" class="qa-assign-cb" value="'+m.id+'"'+(precheck?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">'+
-      '<span class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+h(m.initials)+'</span>'+
-      h(m.name)+'</label>';
-  }).join('');
-  document.getElementById('modal-title').textContent='Quick Add Task';
-  document.getElementById('modal-body').innerHTML=
-    '<div class="fr"><label class="fl">Project *</label>'+
-      '<select class="fs" id="qa-proj">'+projOpts+'</select></div>'+
-    '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="qa-title" placeholder="e.g. Write homepage copy"></div>'+
-    '<div class="fr2">'+
-      '<div><label class="fl">Category</label><input class="fi" id="qa-cat" placeholder="e.g. Design"></div>'+
-      '<div><label class="fl">Priority</label><select class="fs" id="qa-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div>'+
-    '</div>'+
-    '<div class="fr2">'+
-      '<div><label class="fl">Deadline</label><input class="fi" id="qa-due" type="date"></div>'+
-      '<div><label class="fl">Est. Hours</label><input class="fi" id="qa-hrs" type="number" min="0" placeholder="e.g. 4"></div>'+
-    '</div>'+
-    '<div class="fr"><label class="fl">Assign To</label>'+
-      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:150px;overflow-y:auto">'+mCBs+'</div></div>'+
-    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="qa-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>';
-  document.getElementById('modal-submit').onclick=function(){
-    var title=document.getElementById('qa-title').value.trim();
-    if(!title){alert('Please enter a task title.');return;}
-    var pid=document.getElementById('qa-proj').value;
-    var p=gp(pid);if(!p){alert('Project not found.');return;}
-    var cbs=document.querySelectorAll('.qa-assign-cb:checked');
-    var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
-    if(!p.tasks)p.tasks=[];
-    p.tasks.push({
-      id:uid(),title:title,
-      cat:document.getElementById('qa-cat').value.trim(),
-      pri:document.getElementById('qa-pri').value,
-      due:document.getElementById('qa-due').value||null,
-      hrs:document.getElementById('qa-hrs').value||null,
-      notes:document.getElementById('qa-notes').value.trim(),
-      done:false,progress:0,assignees:assignees
-    });
-    closeModal();mutate();toast('Task added to '+h(p.name),'ok');
-  };
-  showModal();
-  setTimeout(function(){var el=document.getElementById('qa-title');if(el)el.focus();},80);
-}
-
 function openAddTask(pid){
   var p=gp(pid);if(!p)return;
   var mCBs=DB.members.map(function(m){
@@ -1333,6 +1287,70 @@ function openAddTask(pid){
     closeModal();if(ST.project===pid)renderDetail(p);mutate();toast('Task added & saved','ok');
   };
   showModal();
+}
+
+
+function openEditTask(pid,tid){
+  var p=gp(pid);if(!p)return;
+  var t=p.tasks&&p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var mCBs=DB.members.map(function(m){
+    var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
+    var checked=asgn.indexOf(m.id)>-1;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:var(--text2)">'+
+      '<input type="checkbox" class="et-assign-cb" value="'+m.id+'"'+(checked?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">'+
+      '<span class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+h(m.initials)+'</span>'+
+      h(m.name)+'</label>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Edit Task';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="et-title" value="'+h(t.title)+'"></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Category</label><input class="fi" id="et-cat" value="'+h(t.cat||'')+'"></div>'+
+      '<div><label class="fl">Priority</label><select class="fs" id="et-pri">'+
+        ['high','med','low'].map(function(v){return '<option value="'+v+'"'+(t.pri===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+
+      '</select></div>'+
+    '</div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Deadline</label><input class="fi" id="et-due" type="date" value="'+(t.due||'')+'"></div>'+
+      '<div><label class="fl">Est. Hours</label><input class="fi" id="et-hrs" type="number" min="0" value="'+(t.hrs||'')+'"></div>'+
+    '</div>'+
+    '<div class="fr"><label class="fl">Assign To</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:150px;overflow-y:auto">'+mCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="et-notes" style="min-height:50px">'+h(t.notes||'')+'</textarea></div>'+
+    '<div class="fr"><label class="fl">Document / Link (optional)</label>'+
+      '<input class="fi" id="et-doc-label" placeholder="e.g. Intake Form" value="'+h(t.docLabel||'')+'" style="margin-bottom:6px">'+
+      '<input class="fi" id="et-doc-url" placeholder="https://drive.google.com/..." value="'+h(t.docUrl||'')+'"></div>';
+  document.getElementById('modal-submit').textContent='Save Changes';
+  document.getElementById('modal-submit').onclick=function(){
+    var title=document.getElementById('et-title').value.trim();
+    if(!title){alert('Please enter a task title.');return;}
+    var cbs=document.querySelectorAll('.et-assign-cb:checked');
+    var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    t.title=title;
+    t.cat=document.getElementById('et-cat').value.trim();
+    t.pri=document.getElementById('et-pri').value;
+    t.due=document.getElementById('et-due').value||null;
+    t.hrs=document.getElementById('et-hrs').value||null;
+    t.notes=document.getElementById('et-notes').value.trim();
+    t.docLabel=document.getElementById('et-doc-label').value.trim();
+    t.docUrl=document.getElementById('et-doc-url').value.trim();
+    t.assignees=assignees;
+    if(assignees.length===1)t.assign=assignees[0];
+    closeModal();
+    if(ST.project===pid)renderDetail(p);
+    mutate();toast('Task updated','ok');
+  };
+  showModal();
+  setTimeout(function(){var el=document.getElementById('et-title');if(el){el.focus();el.select();}},80);
+}
+
+function deleteTask(pid,tid){
+  var p=gp(pid);if(!p)return;
+  var t=p.tasks&&p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  if(!confirm('Delete task "'+t.title+'"? This cannot be undone.'))return;
+  p.tasks=p.tasks.filter(function(x){return x.id!==tid;});
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast('Task deleted','ok');
 }
 
 
