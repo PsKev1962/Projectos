@@ -332,7 +332,7 @@ var TEMPLATES = [
 ];
 
 var DB = {entities:[],members:[],projects:[],pdfDocs:[]};
-var ST = {view:'dashboard',entity:null,project:null,fstat:'all',search:'',filterMember:'all',filterDue:'all'};
+var ST = {view:'dashboard',entity:null,project:null,fstat:'all',search:'',filterMember:'all',filterDue:'all',filterSort:'default'};
 
 // ── HELPERS ──
 function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -764,6 +764,32 @@ function renderTasks(){
     });
   }
 
+  // Sort
+  if(ST.filterSort==='due-asc'){
+    shown=shown.slice().sort(function(a,b){
+      var da=a.task.due?new Date(a.task.due):null;
+      var db=b.task.due?new Date(b.task.due):null;
+      if(!da&&!db)return 0;
+      if(!da)return 1;
+      if(!db)return -1;
+      return da-db;
+    });
+  } else if(ST.filterSort==='due-desc'){
+    shown=shown.slice().sort(function(a,b){
+      var da=a.task.due?new Date(a.task.due):null;
+      var db=b.task.due?new Date(b.task.due):null;
+      if(!da&&!db)return 0;
+      if(!da)return 1;
+      if(!db)return -1;
+      return db-da;
+    });
+  } else if(ST.filterSort==='priority'){
+    var priOrder={high:0,med:1,low:2};
+    shown=shown.slice().sort(function(a,b){
+      return (priOrder[a.task.pri]||1)-(priOrder[b.task.pri]||1);
+    });
+  }
+
   // Build member filter dropdown options
   var allMembers=DB.members;
   var memberOpts='<option value="all">All Members</option>'+
@@ -781,7 +807,7 @@ function renderTasks(){
     '<button class="fb'+(ST.fstat==='done2'?' active':'')+'" onclick="ST.fstat=\'done2\';renderAll()">Done</button>'+
     '</div>';
 
-  // Member + Due date filters
+  // Member + Due date + Sort filters
   html+='<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'+
     '<select class="fs" style="min-width:160px;font-size:12px;padding:6px 10px" onchange="ST.filterMember=this.value;renderAll()">'+memberOpts+'</select>'+
     '<select class="fs" style="min-width:140px;font-size:12px;padding:6px 10px" onchange="ST.filterDue=this.value;renderAll()">'+
@@ -790,8 +816,14 @@ function renderTasks(){
       '<option value="today"'+(ST.filterDue==='today'?' selected':'')+'>Due Today</option>'+
       '<option value="week"'+(ST.filterDue==='week'?' selected':'')+'>Due This Week</option>'+
     '</select>'+
-    (ST.filterMember!=='all'||ST.filterDue!=='all'?
-      '<button class="fb" onclick="ST.filterMember=\'all\';ST.filterDue=\'all\';renderAll()" style="font-size:11px">&#10005; Clear filters</button>':'')+'</div>';
+    '<select class="fs" style="min-width:150px;font-size:12px;padding:6px 10px" onchange="ST.filterSort=this.value;renderAll()">'+
+      '<option value="default"'+(ST.filterSort==='default'?' selected':'')+'>Sort: Default</option>'+
+      '<option value="due-asc"'+(ST.filterSort==='due-asc'?' selected':'')+'>Sort: Due Date ↑</option>'+
+      '<option value="due-desc"'+(ST.filterSort==='due-desc'?' selected':'')+'>Sort: Due Date ↓</option>'+
+      '<option value="priority"'+(ST.filterSort==='priority'?' selected':'')+'>Sort: Priority</option>'+
+    '</select>'+
+    (ST.filterMember!=='all'||ST.filterDue!=='all'||ST.filterSort!=='default'?
+      '<button class="fb" onclick="ST.filterMember=\'all\';ST.filterDue=\'all\';ST.filterSort=\'default\';renderAll()" style="font-size:11px">&#10005; Clear</button>':'')+'</div>';
 
   if(!shown.length)return html+'<div class="empty-state"><div class="empty-icon">&#10003;</div><div class="empty-text">No tasks match these filters</div></div>';
 
