@@ -628,26 +628,101 @@ function renderKanban(){
 }
 
 function renderGantt(){
-  var p=fps();
-  var html='<div class="page-header"><div class="page-title">Timeline</div></div><div style="overflow-x:auto">'+
-    '<table style="min-width:700px;border-collapse:collapse;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)">'+
-    '<thead><tr style="background:var(--bg3)"><th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Project</th>'+
-    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Entity</th>'+
-    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Status</th>'+
-    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left">Due</th>'+
-    '<th style="padding:10px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text4);text-align:left;width:220px">Progress</th></tr></thead><tbody>';
-  p.forEach(function(x){
-    var e=ge(x.entity);
-    html+='<tr style="cursor:pointer;border-top:1px solid var(--border)" onclick="selectProj(\''+x.id+'\')" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+
-      '<td style="padding:10px 12px;font-size:13px;font-weight:600">'+h(x.name)+'</td>'+
-      '<td style="padding:10px 12px"><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.name)+'</span></td>'+
-      '<td style="padding:10px 12px">'+spill(x.status)+'</td>'+
-      '<td style="padding:10px 12px;font-size:12px;color:var(--text3)">'+(x.due||'—')+'</td>'+
-      '<td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px">'+
-        '<div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden"><div style="width:'+projPct(x)+'%;height:100%;background:'+e.color+';border-radius:4px"></div></div>'+
-        '<span style="font-size:11px;color:var(--text4);white-space:nowrap">'+projPct(x)+'%</span></div></td></tr>';
+  var projs=fps();
+  var now=new Date();now.setHours(0,0,0,0);
+  var winStart=new Date(now);winStart.setDate(winStart.getDate()-14);
+  var winEnd=new Date(now);winEnd.setDate(winEnd.getDate()+90);
+  projs.forEach(function(p){var d=parseDue(p.due);if(d&&d>winEnd){winEnd=new Date(d);}});
+  winEnd.setDate(winEnd.getDate()+21);
+  var totalDays=Math.round((winEnd-winStart)/86400000);
+  var labelW=190;var rowH=38;var headerH=36;var gutterH=5;var barH=18;var barY=(rowH-barH)/2;
+  var totalH=headerH+projs.length*(rowH+gutterH)+gutterH;
+  var containerId='gc'+Date.now();
+
+  var html='<div class="page-header"><div class="page-title">Timeline</div>'+
+    '<div style="display:flex;gap:8px;align-items:center">'+
+      '<span style="font-size:11px;color:var(--text4)">'+projs.length+' projects</span>'+
+      '<button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button>'+
+    '</div></div>';
+
+  if(!projs.length)return html+'<div class="empty-state"><div class="empty-icon">&#128197;</div><div class="empty-text">No projects to display</div></div>';
+
+  html+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">'+
+    '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">'+
+      '<div id="'+containerId+'" style="min-width:600px"></div>'+
+    '</div></div>'+
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text4);padding:0 2px">'+
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:4px;vertical-align:middle"></span>Done</span>'+
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4f46e5;margin-right:4px;vertical-align:middle"></span>Active / Planning</span>'+
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:4px;vertical-align:middle"></span>Overdue / At Risk</span>'+
+      '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#eab308;margin-right:4px;vertical-align:middle"></span>On Hold</span>'+
+      '<span style="border-left:2px dashed #ef4444;padding-left:6px">Today line</span>'+
+    '</div>';
+
+  var projData=projs.map(function(p){
+    var e=ge(p.entity);
+    var isOver=parseDue(p.due)&&parseDue(p.due)<now&&p.status!=='done';
+    return {id:p.id,name:p.name,due:p.due,status:p.status,color:isOver?'#ef4444':e.color,pct:projPct(p)};
   });
-  return html+'</tbody></table></div>';
+
+  html+='<script>(function(){'+
+    'var winStart=new Date('+winStart.getTime()+');'+
+    'var winEnd=new Date('+winEnd.getTime()+');'+
+    'var now=new Date('+now.getTime()+');'+
+    'var totalDays='+totalDays+';'+
+    'var labelW='+labelW+';var rowH='+rowH+';var headerH='+headerH+';var gutterH='+gutterH+';var barH='+barH+';var barY='+barY+';var totalH='+totalH+';'+
+    'var projs='+JSON.stringify(projData)+';'+
+    'var months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];'+
+    'function dx(d,w){return labelW+Math.round(Math.round((d-winStart)/86400000)/totalDays*w);}'+
+    'function draw(){'+
+      'var el=document.getElementById("'+containerId+'");if(!el)return;'+
+      'var w=Math.max(el.offsetWidth||700,600);var H=totalH;var s="";'+
+      'var cur=new Date(winStart.getTime());cur.setDate(1);if(cur<winStart)cur.setMonth(cur.getMonth()+1);'+
+      'while(cur<winEnd){var mx=dx(cur,w);if(mx>=labelW){'+
+        's+=\'<text x="\'+mx+\'" y="22" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif" font-weight="600">\'+months[cur.getMonth()]+\' \'+cur.getFullYear()+\'</text>\';'+
+        's+=\'<line x1="\'+mx+\'" y1="26" x2="\'+mx+\'" y2="\'+H+\'" stroke="#e5e7eb" stroke-width="1"/>\';'+
+      '}cur.setMonth(cur.getMonth()+1);}'+
+      'var wcur=new Date(winStart.getTime());var wd=wcur.getDay();wcur.setDate(wcur.getDate()+(wd===0?0:7-wd));'+
+      'while(wcur<winEnd){var wx=dx(wcur,w);if(wx>labelW)s+=\'<line x1="\'+wx+\'" y1="\'+headerH+\'" x2="\'+wx+\'" y2="\'+H+\'" stroke="#f3f4f6" stroke-width="1"/>\';wcur.setDate(wcur.getDate()+7);}'+
+      'projs.forEach(function(p,i){'+
+        'var y=headerH+i*(rowH+gutterH);'+
+        's+=\'<rect x="0" y="\'+y+\'" width="\'+w+\'" height="\'+rowH+\'" fill="\'+( i%2===0?"#ffffff":"#f8f9fb")+\'"/>\';'+
+        'var sd=p.status==="done"?"#22c55e":p.status==="risk"?"#ef4444":p.status==="hold"?"#eab308":p.color;'+
+        's+=\'<circle cx="10" cy="\'+( y+rowH/2)+\'" r="4" fill="\'+sd+\'"/>\';'+
+        'var lbl=p.name.length>22?p.name.slice(0,20)+"...":p.name;'+
+        's+=\'<text x="20" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="12" font-weight="600" fill="#111827" font-family="system-ui,sans-serif" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)">\'+lbl+\'</text>\';'+
+        'if(p.due){'+
+          'var due=new Date(p.due);due.setHours(12,0,0,0);'+
+          'var ns=new Date(due.getTime());ns.setDate(ns.getDate()-28);'+
+          'if(ns.getTime()<winStart.getTime())ns=new Date(winStart.getTime());'+
+          'if(ns.getTime()>due.getTime())ns=new Date(now.getTime());'+
+          'var x1=dx(ns,w);if(x1<labelW)x1=labelW;'+
+          'var x2=dx(due,w);var bw=Math.max(x2-x1,6);'+
+          'var fgw=p.pct>0?Math.max(Math.round(bw*p.pct/100),3):0;'+
+          's+=\'<rect x="\'+x1+\'" y="\'+( y+barY)+\'" width="\'+bw+\'" height="\'+barH+\'" rx="4" fill="\'+p.color+\'22" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
+          'if(fgw>0)s+=\'<rect x="\'+x1+\'" y="\'+( y+barY)+\'" width="\'+fgw+\'" height="\'+barH+\'" rx="4" fill="\'+p.color+\'" opacity="0.8" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
+          'var dmx=dx(due,w);'+
+          's+=\'<polygon points="\'+dmx+",\"+( y+barY-2)+\' \'+( dmx+5)+",\"+( y+rowH/2)+\' \'+dmx+",\"+( y+barY+barH+2)+\' \'+( dmx-5)+",\"+( y+rowH/2)+\'" fill="\'+p.color+\'" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
+          'var dlbl=due.toLocaleDateString("en-AU",{day:"numeric",month:"short"});'+
+          's+=\'<text x="\'+( dmx+9)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">\'+dlbl+\'</text>\';'+
+          'if(p.pct>0)s+=\'<text x="\'+( x1+4)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" font-weight="700" fill="white" font-family="system-ui,sans-serif">\'+p.pct+\'%</text>\';'+
+        '}else{'+
+          's+=\'<rect x="\'+( labelW+4)+\'" y="\'+( y+barY)+\'" width="58" height="\'+barH+\'" rx="4" fill="#e5e7eb"/>\';'+
+          's+=\'<text x="\'+( labelW+8)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">No due date</text>\';'+
+        '}'+
+      '});'+
+      'var tx=dx(now,w);'+
+      's+=\'<line x1="\'+tx+\'" y1="0" x2="\'+tx+\'" y2="\'+H+\'" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>\';'+
+      's+=\'<rect x="\'+( tx-18)+\'" y="4" width="36" height="16" rx="8" fill="#ef4444"/>\';'+
+      's+=\'<text x="\'+tx+\'" y="12" dominant-baseline="middle" font-size="9" font-weight="700" fill="white" font-family="system-ui,sans-serif" text-anchor="middle">TODAY</text>\';'+
+      'el.innerHTML=\'<svg width="\'+w+\'" height="\'+H+\'" xmlns="http://www.w3.org/2000/svg">\'+s+\'</svg>\';'+
+    '}'+
+    'draw();'+
+    'if(window.ganttResizeObs)window.ganttResizeObs.disconnect();'+
+    'try{window.ganttResizeObs=new ResizeObserver(function(){draw();});window.ganttResizeObs.observe(document.getElementById("'+containerId+'"));}catch(e){window.addEventListener("resize",draw);}'+
+  '})();<\/script>';
+
+  return html;
 }
 
 function renderTasks(){
