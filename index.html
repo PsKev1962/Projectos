@@ -487,12 +487,28 @@ function fps(){
 
 function getAttn(){
   var r=[];
+  var now=new Date();
   DB.projects.forEach(function(p){
-    if(isOD(p))r.push({type:'overdue',proj:p,sev:'high'});
-    else if(p.status==='risk')r.push({type:'risk',proj:p,sev:'high'});
-    else if(isDS(p))r.push({type:'soon',proj:p,sev:'med'});
+    if(p.status==='done')return;
+    var added=false;
+    if(isOD(p)){r.push({type:'overdue',proj:p,sev:'high'});added=true;}
+    else if(p.status==='risk'){r.push({type:'risk',proj:p,sev:'high'});added=true;}
+    else if(isDS(p)){r.push({type:'soon',proj:p,sev:'med'});added=true;}
+    if(!added&&p.tasks){
+      var hasOverdueTask=false;
+      p.tasks.forEach(function(t){
+        if(!t.done&&t.due){var d=parseDue(t.due);if(d&&d<now)hasOverdueTask=true;}
+      });
+      if(hasOverdueTask)r.push({type:'task-overdue',proj:p,sev:'high'});
+    }
   });
   return r;
+}
+
+function projPct(p){
+  var tasks=p.tasks||[];
+  if(!tasks.length)return p.progress||0;
+  return Math.round(tasks.reduce(function(s,t){return s+(t.done?100:(t.progress||0));},0)/tasks.length);
 }
 
 function spill(s){
@@ -540,8 +556,8 @@ function renderAttn(){
   if(!items.length)return html+'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">All clear!</div></div>';
   return html+'<div class="alert-list">'+items.map(function(item){
     var p=item.proj;var e=ge(p.entity);
-    var lbl=item.type==='overdue'?'Overdue':item.type==='risk'?'At Risk':'Due Within 7 Days';
-    var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':'🟡';
+    var lbl=item.type==='overdue'?'Overdue':item.type==='risk'?'At Risk':item.type==='task-overdue'?'Has Overdue Tasks':'Due Within 7 Days';
+    var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':item.type==='task-overdue'?'🔶':'🟡';
     return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
       '<span class="alert-icon">'+ic+'</span>'+
       '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+p.due:'')+'</div></div>'+
@@ -583,7 +599,7 @@ function projTable(projs){
       '<div>'+spill(p.status)+'</div>'+
       '<div class="p'+p.priority+'">'+p.priority.toUpperCase()+'</div>'+
       '<div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:'+lm.color+';width:22px;height:22px;font-size:8px">'+h(lm.initials)+'</div><span style="font-size:12px;color:var(--text2)">'+h(lm.name)+'</span></div>'+
-      '<div class="pw"><div class="pb"><div class="pbf" style="width:'+p.progress+'%"></div></div><span class="ppc">'+p.progress+'%</span></div>'+
+      '<div class="pw"><div class="pb"><div class="pbf" style="width:'+projPct(p)+'%"></div></div><span class="ppc">'+projPct(p)+'%</span></div>'+
       '<div class="row-acts"><button class="delbtn" onclick="event.stopPropagation();delProj(\''+p.id+'\')" title="Delete">✕</button></div></div>';
   });
   return html+'</div>';
@@ -603,8 +619,8 @@ function renderKanban(){
         '<div class="kcard-title">'+h(x.name)+'</div>'+
         '<div class="kcard-meta"><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
         '<div class="av" style="background:'+lm.color+';width:20px;height:20px;font-size:8px">'+h(lm.initials)+'</div>'+
-        '<span style="font-size:11px;color:var(--text4)">'+x.progress+'%</span></div>'+
-        '<div class="kcard-prog"><div class="kcard-pf" style="width:'+x.progress+'%"></div></div></div>';
+        '<span style="font-size:11px;color:var(--text4)">'+projPct(x)+'%</span></div>'+
+        '<div class="kcard-prog"><div class="kcard-pf" style="width:'+projPct(x)+'%"></div></div></div>';
     });
     html+='</div></div>';
   });
@@ -628,8 +644,8 @@ function renderGantt(){
       '<td style="padding:10px 12px">'+spill(x.status)+'</td>'+
       '<td style="padding:10px 12px;font-size:12px;color:var(--text3)">'+(x.due||'—')+'</td>'+
       '<td style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px">'+
-        '<div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden"><div style="width:'+x.progress+'%;height:100%;background:'+e.color+';border-radius:4px"></div></div>'+
-        '<span style="font-size:11px;color:var(--text4);white-space:nowrap">'+x.progress+'%</span></div></td></tr>';
+        '<div style="flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden"><div style="width:'+projPct(x)+'%;height:100%;background:'+e.color+';border-radius:4px"></div></div>'+
+        '<span style="font-size:11px;color:var(--text4);white-space:nowrap">'+projPct(x)+'%</span></div></td></tr>';
   });
   return html+'</tbody></table></div>';
 }
@@ -730,31 +746,57 @@ function renderTasks(){
 function renderTeam(){
   var html='<div class="page-header"><div class="page-title">Team Members</div><button class="tb-btn tb-btn-accent" onclick="openNewMember()">+ Add Member</button></div>';
   if(!DB.members.length)return html+'<div class="empty-state"><div class="empty-icon">&#128101;</div><div class="empty-text">No team members yet</div></div>';
+  var now=new Date();
   return html+'<div class="team-grid">'+DB.members.map(function(m){
     var ps=DB.projects.filter(function(p){return p.members&&p.members.indexOf(m.id)>-1;});
-    var ot=0;ps.forEach(function(p){if(p.tasks)p.tasks.forEach(function(t){if(!t.done&&t.assign===m.id)ot++;});});
+    var allTasks=[];
+    DB.projects.forEach(function(p){
+      if(p.tasks)p.tasks.forEach(function(t){
+        var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
+        if(asgn.indexOf(m.id)>-1)allTasks.push({task:t,proj:p});
+      });
+    });
+    var ot=allTasks.filter(function(x){return !x.task.done;}).length;
+    var od=allTasks.filter(function(x){return !x.task.done&&x.task.due&&parseDue(x.task.due)<now;}).length;
+    var dueThisWeek=allTasks.filter(function(x){
+      if(!x.task.due||x.task.done)return false;
+      var d=parseDue(x.task.due);var diff=(d-now)/86400000;
+      return diff>=0&&diff<=7;
+    }).length;
     var entities=m.entities||[m.entity];
     var entNames=entities.map(function(id){return ge(id).name;}).join(', ');
     var dotColor=(ge(entities[0]||'').color)||'#888';
     var editBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px" onclick="editMember(\'' +m.id+ '\')">&#9998; Edit</button>';
     var delBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteMember(\'' +m.id+ '\')">&#10005;</button>';
+    var odBadge=od>0?'<span style="background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;margin-left:6px">'+od+' overdue</span>':'';
+    var weekBadge=dueThisWeek>0&&od===0?'<span style="background:var(--yellow-light);color:var(--yellow);font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;margin-left:6px">'+dueThisWeek+' due soon</span>':'';
     return '<div class="mem-card">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
         '<div class="mem-av" style="background:'+m.color+'">'+h(m.initials)+'</div>'+
         '<div style="display:flex;gap:6px">'+editBtn+delBtn+'</div>'+
       '</div>'+
-      '<div class="mem-nm">'+h(m.name)+'</div>'+
+      '<div class="mem-nm">'+h(m.name)+odBadge+weekBadge+'</div>'+
       '<div class="mem-em">'+h(m.email)+'</div>'+
       (m.phone?'<div style="font-size:12px;color:var(--text3);margin-top:2px">&#128222; '+h(m.phone)+'</div>':'')+
       '<div style="font-size:11px;margin-top:2px;color:'+dotColor+'">'+h(entNames)+'</div>'+
       memberContactBtns(m, null, null)+
       '<div class="mem-stats">'+
         '<div class="mst"><div class="mst-v">'+ps.length+'</div><div class="mst-l">Projects</div></div>'+
-        '<div class="mst"><div class="mst-v">'+ot+'</div><div class="mst-l">Open Tasks</div></div>'+
-      '</div></div>';
+        '<div class="mst"><div class="mst-v"'+(od>0?' style="color:var(--red)"':ot>0?' style="color:var(--orange)"':'')+'>'+ot+'</div><div class="mst-l">Open Tasks</div></div>'+
+        '<div class="mst"><div class="mst-v">'+dueThisWeek+'</div><div class="mst-l">Due This Week</div></div>'+
+      '</div>'+
+      (ot>0?'<button class="tb-btn" style="width:100%;margin-top:10px;font-size:12px" onclick="viewMemberTasks(\'' +m.id+ '\')">View All Tasks &rarr;</button>':'')+
+      '</div>';
   }).join('')+'</div>';
 }
 
+
+function viewMemberTasks(memberId){
+  ST.filterMember=memberId;
+  ST.filterDue='all';
+  ST.fstat='open';
+  setView('tasks');
+}
 
 function editMember(id){
   var m=DB.members.find(function(x){return x.id===id;});if(!m)return;
@@ -1100,16 +1142,14 @@ function openNewProject(tplId){
     '<div class="fr2">'+
       '<div><label class="fl">Status</label><select class="fs" id="np-stat"><option value="planning">Planning</option><option value="active">Active</option></select></div>'+
       '<div><label class="fl">Priority</label><select class="fs" id="np-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div></div>'+
-    '<div class="fr2">'+
-      '<div><label class="fl">Due Date</label><input class="fi" id="np-due" type="date"></div>'+
-      '<div><label class="fl">Progress %</label><input class="fi" id="np-prog" type="number" min="0" max="100" value="0"></div></div>'+
+    '<div class="fr"><label class="fl">Due Date</label><input class="fi" id="np-due" type="date"></div>'+
     '<div class="fr"><label class="fl">Description</label><textarea class="fta" id="np-desc" placeholder="Brief description..."></textarea></div>';
   document.getElementById('modal-submit').onclick=function(){
     var nm=document.getElementById('np-nm').value.trim();
     if(!nm){alert('Please enter a project name.');return;}
     var tasks=[];
     if(tplId){var tpl=TEMPLATES.find(function(t){return t.id===tplId;});if(tpl)tasks=tpl.tasks.map(function(t){return {id:uid(),title:t.title,cat:t.cat,pri:t.pri,done:false,assign:document.getElementById('np-lead').value};});}
-    DB.projects.push({id:uid(),name:nm,entity:document.getElementById('np-ent').value,status:document.getElementById('np-stat').value,priority:document.getElementById('np-pri').value,progress:parseInt(document.getElementById('np-prog').value)||0,due:document.getElementById('np-due').value||null,lead:document.getElementById('np-lead').value,members:[document.getElementById('np-lead').value],desc:document.getElementById('np-desc').value.trim(),tasks:tasks,notes:[],docs:[]});
+    DB.projects.push({id:uid(),name:nm,entity:document.getElementById('np-ent').value,status:document.getElementById('np-stat').value,priority:document.getElementById('np-pri').value,progress:0,due:document.getElementById('np-due').value||null,lead:document.getElementById('np-lead').value,members:[document.getElementById('np-lead').value],desc:document.getElementById('np-desc').value.trim(),tasks:tasks,notes:[],docs:[]});
     closeModal();mutate();toast('Project created & saved','ok');
   };
   showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
