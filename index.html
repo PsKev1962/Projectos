@@ -772,7 +772,10 @@ function renderTasks(){
     }).join('');
 
   var html='<div class="page-header"><div class="page-title">All Tasks</div>'+
-    '<span style="font-size:13px;color:var(--text3)">'+shown.length+' tasks</span></div>';
+    '<div style="display:flex;align-items:center;gap:10px">'+
+      '<span style="font-size:13px;color:var(--text3)">'+shown.length+' tasks</span>'+
+      '<button class="tb-btn tb-btn-accent" onclick="openQuickAddTask()">+ Add Task</button>'+
+    '</div></div>';
 
   // Status filters
   html+='<div class="task-filters">'+
@@ -1228,6 +1231,58 @@ function openNewProject(tplId){
     closeModal();mutate();toast('Project created & saved','ok');
   };
   showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
+}
+
+function openQuickAddTask(){
+  if(!DB.projects.length){toast('Create a project first','err');return;}
+  var projOpts=DB.projects.map(function(p){
+    var e=ge(p.entity);
+    return '<option value="'+p.id+'">'+h(p.name)+' ('+h(e.short)+')</option>';
+  }).join('');
+  var mCBs=DB.members.map(function(m){
+    var precheck=ST.filterMember===m.id;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:13px;color:var(--text2)">'+
+      '<input type="checkbox" class="qa-assign-cb" value="'+m.id+'"'+(precheck?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">'+
+      '<span class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;flex-shrink:0">'+h(m.initials)+'</span>'+
+      h(m.name)+'</label>';
+  }).join('');
+  document.getElementById('modal-title').textContent='Quick Add Task';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Project *</label>'+
+      '<select class="fs" id="qa-proj">'+projOpts+'</select></div>'+
+    '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="qa-title" placeholder="e.g. Write homepage copy"></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Category</label><input class="fi" id="qa-cat" placeholder="e.g. Design"></div>'+
+      '<div><label class="fl">Priority</label><select class="fs" id="qa-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div>'+
+    '</div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Deadline</label><input class="fi" id="qa-due" type="date"></div>'+
+      '<div><label class="fl">Est. Hours</label><input class="fi" id="qa-hrs" type="number" min="0" placeholder="e.g. 4"></div>'+
+    '</div>'+
+    '<div class="fr"><label class="fl">Assign To</label>'+
+      '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:150px;overflow-y:auto">'+mCBs+'</div></div>'+
+    '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="qa-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>';
+  document.getElementById('modal-submit').onclick=function(){
+    var title=document.getElementById('qa-title').value.trim();
+    if(!title){alert('Please enter a task title.');return;}
+    var pid=document.getElementById('qa-proj').value;
+    var p=gp(pid);if(!p){alert('Project not found.');return;}
+    var cbs=document.querySelectorAll('.qa-assign-cb:checked');
+    var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
+    if(!p.tasks)p.tasks=[];
+    p.tasks.push({
+      id:uid(),title:title,
+      cat:document.getElementById('qa-cat').value.trim(),
+      pri:document.getElementById('qa-pri').value,
+      due:document.getElementById('qa-due').value||null,
+      hrs:document.getElementById('qa-hrs').value||null,
+      notes:document.getElementById('qa-notes').value.trim(),
+      done:false,progress:0,assignees:assignees
+    });
+    closeModal();mutate();toast('Task added to '+h(p.name),'ok');
+  };
+  showModal();
+  setTimeout(function(){var el=document.getElementById('qa-title');if(el)el.focus();},80);
 }
 
 function openAddTask(pid){
