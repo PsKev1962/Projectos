@@ -1157,6 +1157,7 @@ function renderDetail(p){
       var names=asgn.map(function(id){return gm(id).name.split(' ')[0];}).join(', ')||'Unassigned';
       var dueStr='';
       if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<new Date();dueStr='<span class="task-due'+(od?' overdue':'')+'">📅 '+(od?'Overdue · ':'')+t.due+'</span>';}
+      var remStr=(!t.done&&t.reminderDays!=null&&t.due)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">🔔 '+t.reminderDays+'d reminder</span>':'';
       var prog=t.progress||0;
       var pc=t.pri==='high'?'var(--red)':t.pri==='med'?'var(--orange)':'var(--green)';
       return '<div class="task-card">'+
@@ -1176,6 +1177,7 @@ function renderDetail(p){
               (t.cat?'<span class="tcat">'+h(t.cat)+'</span>':'')+
               '<span style="font-size:10px;font-weight:700;color:'+pc+'">'+t.pri.toUpperCase()+'</span>'+
               dueStr+
+              remStr+
             '</div>'+
             '<div style="margin-bottom:6px">'+
               '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
@@ -1365,6 +1367,11 @@ function openAddTask(pid){
       '<div><label class="fl">Deadline</label><input class="fi" id="nt-due" type="date"></div>'+
       '<div><label class="fl">Est. Hours</label><input class="fi" id="nt-hrs" type="number" min="0" placeholder="e.g. 4"></div>'+
     '</div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Email Reminder (days before deadline)</label>'+
+        '<input class="fi" id="nt-remind" type="number" min="0" max="90" placeholder="e.g. 3 — leave blank for none"></div>'+
+      '<div></div>'+
+    '</div>'+
     '<div class="fr"><label class="fl">Assign To (select all responsible)</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+mCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="nt-notes" placeholder="Any details..." style="min-height:50px"></textarea></div>'+
@@ -1384,6 +1391,7 @@ function openAddTask(pid){
       pri:document.getElementById('nt-pri').value,
       due:document.getElementById('nt-due').value||null,
       hrs:document.getElementById('nt-hrs').value||null,
+      reminderDays:document.getElementById('nt-remind').value!==''?parseInt(document.getElementById('nt-remind').value):null,
       notes:document.getElementById('nt-notes').value.trim(),
       docLabel:document.getElementById('nt-doc-label').value.trim(),
       docUrl:document.getElementById('nt-doc-url').value.trim(),
@@ -1421,6 +1429,11 @@ function openEditTask(pid,tid){
       '<div><label class="fl">Deadline</label><input class="fi" id="et-due" type="date" value="'+(t.due||'')+'"></div>'+
       '<div><label class="fl">Est. Hours</label><input class="fi" id="et-hrs" type="number" min="0" value="'+(t.hrs||'')+'"></div>'+
     '</div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Email Reminder (days before deadline)</label>'+
+        '<input class="fi" id="et-remind" type="number" min="0" max="90" placeholder="e.g. 3 — leave blank for none" value="'+(t.reminderDays!=null?t.reminderDays:'')+'"></div>'+
+      '<div></div>'+
+    '</div>'+
     '<div class="fr"><label class="fl">Assign To</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:150px;overflow-y:auto">'+mCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Notes</label><textarea class="fta" id="et-notes" style="min-height:50px">'+h(t.notes||'')+'</textarea></div>'+
@@ -1438,6 +1451,7 @@ function openEditTask(pid,tid){
     t.pri=document.getElementById('et-pri').value;
     t.due=document.getElementById('et-due').value||null;
     t.hrs=document.getElementById('et-hrs').value||null;
+    t.reminderDays=document.getElementById('et-remind').value!==''?parseInt(document.getElementById('et-remind').value):null;
     t.notes=document.getElementById('et-notes').value.trim();
     t.docLabel=document.getElementById('et-doc-label').value.trim();
     t.docUrl=document.getElementById('et-doc-url').value.trim();
