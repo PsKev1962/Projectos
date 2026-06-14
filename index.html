@@ -128,6 +128,19 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .kcard-prog{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
 .kcard-pf{height:100%;border-radius:2px;background:var(--accent);}
 .kcard-proj{font-size:10px;color:var(--text4);margin-top:4px;}
+.proof-section{margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+.proof-item{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-bottom:6px;}
+.proof-icon{font-size:16px;flex-shrink:0;}
+.proof-body{flex:1;min-width:0;}
+.proof-label{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.proof-meta{font-size:10px;color:var(--text4);margin-top:1px;}
+.proof-open{font-size:11px;color:var(--accent);font-weight:600;text-decoration:none;flex-shrink:0;}
+.proof-open:hover{text-decoration:underline;}
+.proof-del{background:none;border:none;cursor:pointer;color:var(--text4);font-size:13px;padding:2px 4px;flex-shrink:0;}
+.proof-del:hover{color:var(--red);}
+.proof-add-row{display:flex;gap:6px;margin-top:6px;}
+.proof-add-row input{flex:1;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--bg);color:var(--text);}
+.proof-add-row input:focus{outline:none;border-color:var(--accent);}
 .kb-empty{text-align:center;padding:24px 12px;color:var(--text4);font-size:12px;border:2px dashed var(--border);border-radius:6px;}
 .task-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .fb{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--text3);font-family:inherit;transition:all .12s;}
@@ -1324,6 +1337,7 @@ function renderDetail(p){
             '</div>'+
           '</div>'+
         '</div>'+
+      taskProofHTML(p.id,t)+
       taskCommentsHTML(p.id,t)+
       '</div>';
     }).join('');
@@ -1400,6 +1414,70 @@ function updateTaskProgInline(pid,tid,val){
   } else {
     toast('Progress updated to '+v+'%','ok');
   }
+}
+
+function taskProofHTML(pid, t){
+  var proofs=t.proofs||[];
+  var wid='tpr-'+t.id;
+  var html='<div class="proof-section" id="'+wid+'">';
+  html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">'+
+    '<span style="font-size:11px;color:var(--text3);font-weight:600">'+
+      (proofs.length>0?'&#9989; '+proofs.length+' proof'+(proofs.length!==1?'s':''):'&#128204; Proof of completion')+
+    '</span>'+
+  '</div>';
+  proofs.forEach(function(pr,i){
+    var icon=pr.url&&pr.url.match(/\.(jpg|jpeg|png|gif|webp)/i)?'&#128247;':'&#128196;';
+    html+='<div class="proof-item">'+
+      '<span class="proof-icon">'+icon+'</span>'+
+      '<div class="proof-body">'+
+        '<div class="proof-label">'+h(pr.label||'Proof '+( i+1))+'</div>'+
+        '<div class="proof-meta">'+h(pr.who)+' &middot; '+h(pr.when)+'</div>'+
+      '</div>'+
+      '<a class="proof-open" href="'+h(pr.url)+'" target="_blank">Open &#8599;</a>'+
+      '<button class="proof-del" data-pid="'+pid+'" data-tid="'+t.id+'" data-idx="'+i+'" onclick="removeTaskProof(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'),parseInt(this.getAttribute(\'data-idx\')))">&#10005;</button>'+
+    '</div>';
+  });
+  html+='<div class="proof-add-row">'+
+    '<input id="prl-'+t.id+'" placeholder="Label e.g. Setup complete photo" />'+
+    '<input id="pru-'+t.id+'" placeholder="Google Drive link..." />'+
+    '<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;flex-shrink:0" '+
+      'data-pid="'+pid+'" data-tid="'+t.id+'" '+
+      'onclick="addTaskProof(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'))">Attach</button>'+
+  '</div>';
+  html+='</div>';
+  return html;
+}
+
+function addTaskProof(pid,tid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var urlEl=document.getElementById('pru-'+tid);
+  var lblEl=document.getElementById('prl-'+tid);
+  if(!urlEl||!urlEl.value.trim()){toast('Please paste a Google Drive link','err');return;}
+  var url=urlEl.value.trim();
+  var label=lblEl?lblEl.value.trim():'';
+  if(!label)label='Proof '+(( t.proofs||[]).length+1);
+  var whoName='Team';
+  if(ST.viewAs!=='all'){var wm=gm(ST.viewAs);if(wm)whoName=wm.name;}
+  if(!t.proofs)t.proofs=[];
+  t.proofs.push({
+    url:url,
+    label:label,
+    who:whoName,
+    when:new Date().toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+  });
+  mutate();
+  if(ST.project===pid)renderDetail(p);
+  toast('&#9989; Proof attached!','ok');
+}
+
+function removeTaskProof(pid,tid,idx){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.proofs)return;
+  t.proofs.splice(idx,1);
+  mutate();
+  if(ST.project===pid)renderDetail(p);
+  toast('Proof removed','ok');
 }
 
 function taskCommentsHTML(pid, t){
