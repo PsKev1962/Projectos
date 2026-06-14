@@ -132,6 +132,14 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .task-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
 .task-row:last-child{border-bottom:none;}
 .task-row:hover{background:var(--bg3);}
+.at-row{flex-wrap:wrap;align-items:flex-start;padding:10px 14px;}
+.at-prog-row{display:flex;align-items:center;gap:6px;margin-top:6px;width:100%;}
+.at-prog-slider{-webkit-appearance:none;appearance:none;width:110px;height:4px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer;flex-shrink:0;}
+.at-prog-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.at-prog-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;}
+.at-prog-track{flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.at-prog-fill{height:100%;border-radius:2px;transition:width .15s,background .3s;}
+.at-prog-pct{font-size:10px;color:var(--text4);font-weight:600;min-width:28px;text-align:right;flex-shrink:0;}
 .tck{width:16px;height:16px;border:2px solid var(--border2);border-radius:4px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .tck.done{background:var(--green);border-color:var(--green);color:#fff;font-size:10px;}
 .ttx{flex:1;font-size:13px;color:var(--text);}
@@ -226,18 +234,12 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 /* ── Task Comments ── */
-.task-comments{margin-top:8px;border-top:1px solid var(--border);padding-top:6px;}
-.tc-toggle{padding:2px 0 4px;}
-.tc-toggle:hover span{color:var(--accent);}
-.task-comment{display:flex;gap:8px;margin-bottom:8px;}
-.tc-av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;letter-spacing:.5px;}
-.tc-content{flex:1;min-width:0;}
-.tc-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:2px;}
-.task-comment-who{font-weight:600;color:var(--accent);font-size:12px;}
+.task-comments{margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+.task-comment{background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+.task-comment-who{font-weight:600;color:var(--accent);margin-right:6px;}
 .task-comment-when{color:var(--text4);font-size:10px;}
-.task-comment-text{font-size:12px;color:var(--text2);line-height:1.5;background:var(--bg3);border-radius:5px;padding:5px 8px;}
-.tc-input-row{display:flex;gap:6px;margin-top:6px;align-items:flex-end;}
-.task-comment-input{flex:1;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:12px;font-family:inherit;resize:none;background:var(--bg);}
+.task-comment-text{margin-top:3px;color:var(--text2);line-height:1.5;}
+.task-comment-input{width:100%;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:12px;font-family:inherit;resize:none;min-height:50px;background:var(--bg);}
 .task-comment-input:focus{outline:none;border-color:var(--accent);}
 /* ── Active blue links ── */
 a{color:var(--accent);text-decoration:none;}
@@ -914,7 +916,9 @@ function renderTasks(){
     var avs=asgn.slice(0,3).map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+';width:18px;height:18px;font-size:7px;margin-left:-3px;border:1px solid var(--bg2)" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('');
     var dueStr='';
     if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<now;dueStr='<span class="task-due'+(od?' overdue':'')+'" style="font-size:10px">&#128197; '+(od?'Overdue · ':'')+t.due+'</span>';}
-    return '<div class="task-row" onclick="selectProj(\'' +p.id+ '\')">' +
+    var prog=t.done?100:(t.progress||0);
+    var progColor=prog===100?'var(--green)':prog>=50?'var(--blue)':'var(--accent)';
+    return '<div class="task-row at-row" onclick="selectProj(\'' +p.id+ '\')">' +
       '<div class="tck'+(t.done?' done':'')+'" onclick="event.stopPropagation();toggleTask(\'' +p.id+ '\',\'' +t.id+ '\')">'+(t.done?'&#10003;':'')+'</div>'+
       '<div style="flex:1;min-width:0">'+
         '<div class="ttx'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
@@ -924,8 +928,16 @@ function renderTasks(){
           '<span style="font-size:10px;color:var(--text4)">'+h(p.name)+'</span>'+
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
         '</div>'+
+        '<div class="at-prog-row" onclick="event.stopPropagation()">'+
+          '<input class="at-prog-slider" type="range" min="0" max="100" value="'+prog+'"'+
+            ' data-pid="'+p.id+'" data-tid="'+t.id+'"'+
+            ' oninput="var f=document.getElementById(\'tpf-'+t.id+'\');if(f)f.style.width=this.value+\'%\';var s=document.getElementById(\'tpp-'+t.id+'\');if(s)s.textContent=this.value+\'%\'"'+
+            ' onchange="updateTaskProgInline(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'),this.value)">'+
+          '<div class="at-prog-track"><div class="at-prog-fill" id="tpf-'+t.id+'" style="width:'+prog+'%;background:'+progColor+'"></div></div>'+
+          '<span class="at-prog-pct" id="tpp-'+t.id+'">'+prog+'%</span>'+
+        '</div>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:4px;padding-left:6px">'+avs+
+      '<div style="display:flex;align-items:center;gap:4px;padding-left:6px;flex-shrink:0">'+avs+
         '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit" style="font-size:11px;padding:2px 7px;opacity:0.6">&#9998;</button>'+
         '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red);opacity:0.6">&#10005;</button>'+
       '</div>'+
@@ -1260,51 +1272,43 @@ function updateTaskProg(pid,tid,val){
   mutate();
 }
 
-function taskCommentsHTML(pid, t){
-  var comments=t.comments||[];
-  var cnt=comments.length;
-  var cid='tc-'+t.id;
-  var wid='tcw-'+t.id;
-  var open=cnt===0;
-  var html='<div class="task-comments" id="'+wid+'">';
-  html+='<div class="tc-toggle" data-wid="'+wid+'" onclick="tcToggle(this.getAttribute(\'data-wid\'))" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;user-select:none;">'+
-    '<span style="font-size:11px;color:var(--text3);font-weight:600">'+
-      (cnt>0?'💬 '+cnt+' comment'+(cnt!==1?'s':''):'💬 Add comment')+
-    '</span>'+
-    '<span class="tc-chevron" style="font-size:10px;color:var(--text4);">'+(open?'▲':'▼')+'</span>'+
-  '</div>';
-  html+='<div class="tc-body" style="display:'+(open?'block':'none')+';padding-top:4px;">';
-  if(cnt>0){
-    html+=comments.map(function(c){
-      var initials=(c.who||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-      var m=DB.members.find(function(x){return x.name===c.who;})||null;
-      var bg=m?m.color:'#6b7280';
-      return '<div class="task-comment">'+
-        '<div class="tc-av" style="background:'+bg+'">'+h(initials)+'</div>'+
-        '<div class="tc-content">'+
-          '<div class="tc-meta"><span class="task-comment-who">'+h(c.who)+'</span><span class="task-comment-when">'+h(c.when)+'</span></div>'+
-          '<div class="task-comment-text">'+h(c.text)+'</div>'+
-        '</div>'+
-      '</div>';
-    }).join('');
+function updateTaskProgInline(pid,tid,val){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var v=Math.min(100,Math.max(0,parseInt(val)||0));
+  t.progress=v;
+  if(v===100){t.done=true;}
+  var fill=document.getElementById('tpf-'+tid);if(fill){fill.style.width=v+'%';fill.style.background=v===100?'var(--green)':v>=50?'var(--blue)':'var(--accent)';}
+  var pct=document.getElementById('tpp-'+tid);if(pct)pct.textContent=v+'%';
+  p.progress=p.tasks.length?Math.round(p.tasks.reduce(function(s,x){return s+(x.progress||0);},0)/p.tasks.length):0;
+  mutate();
+  if(v===100){
+    toast('✓ Task marked complete!','ok');
+    setTimeout(function(){if(ST.view==='tasks')renderAll();},400);
+  } else {
+    toast('Progress updated to '+v+'%','ok');
   }
-  var whoLabel=ST.viewAs!=='all'?(function(){var m=gm(ST.viewAs);return m?m.name.split(' ')[0]:'Team';})():'Team';
-  html+='<div class="tc-input-row">'+
-    '<textarea class="task-comment-input" id="'+cid+'" placeholder="Comment as '+whoLabel+'..." rows="2"></textarea>'+
-    '<button class="btn btn-primary" style="padding:5px 12px;font-size:11px;white-space:nowrap;align-self:flex-end;flex-shrink:0" data-pid="'+pid+'" data-tid="'+t.id+'" onclick="var b=this;addTaskComment(b.getAttribute(\'data-pid\'),b.getAttribute(\'data-tid\'))">Post</button>'+
-  '</div>';
-  html+='</div></div>';
-  return html;
 }
 
-function tcToggle(wid){
-  var wrap=document.getElementById(wid);if(!wrap)return;
-  var body=wrap.querySelector('.tc-body');
-  var chev=wrap.querySelector('.tc-chevron');
-  if(!body)return;
-  var open=body.style.display==='none';
-  body.style.display=open?'block':'none';
-  if(chev)chev.textContent=open?'▲':'▼';
+function taskCommentsHTML(pid, t){
+  var comments=t.comments||[];
+  var html='<div class="task-comments">';
+  if(comments.length){
+    html+=comments.map(function(c){
+      return '<div class="task-comment">'+
+        '<span class="task-comment-who">'+h(c.who)+'</span>'+
+        '<span class="task-comment-when">'+h(c.when)+'</span>'+
+        '<div class="task-comment-text">'+h(c.text)+'</div>'+
+        '</div>';
+    }).join('');
+  }
+  html+='<div style="display:flex;gap:6px;margin-top:6px">'+
+    '<textarea class="task-comment-input" id="tc-'+t.id+'" placeholder="Add a comment..."></textarea>'+
+    '<button class="btn btn-primary" style="padding:4px 10px;font-size:11px;white-space:nowrap;align-self:flex-end" '+
+    'onclick="addTaskComment(\'' +pid+ '\',\'' +t.id+ '\')">Add</button>'+
+    '</div>'+
+    '</div>';
+  return html;
 }
 
 function addTaskComment(pid, tid){
@@ -1312,12 +1316,10 @@ function addTaskComment(pid, tid){
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
   var ta=document.getElementById('tc-'+tid);
   if(!ta||!ta.value.trim())return;
-  var whoName='Team';
-  if(ST.viewAs!=='all'){var wm=gm(ST.viewAs);if(wm)whoName=wm.name;}
   if(!t.comments)t.comments=[];
   t.comments.push({
-    who:whoName,
-    when:new Date().toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
+    who:'Team',
+    when:new Date().toLocaleString(),
     text:ta.value.trim()
   });
   ta.value='';
