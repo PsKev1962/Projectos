@@ -109,8 +109,7 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .pb{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
 .pbf{height:100%;border-radius:2px;background:var(--accent);}
 .ppc{font-size:11px;color:var(--text4);white-space:nowrap;}
-.row-acts{display:flex;gap:4px;opacity:0;transition:opacity .12s;}
-.proj-row:hover .row-acts{opacity:1;}
+.row-acts{display:flex;gap:4px;}
 .delbtn{background:none;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer;color:var(--text3);}
 .delbtn:hover{background:var(--red-light);color:var(--red);border-color:var(--red);}
 .kanban-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
@@ -1063,8 +1062,8 @@ function renderTasks(){
         '</div>'+
       '</div>'+
       '<div style="display:flex;align-items:center;gap:4px;padding-left:6px;flex-shrink:0">'+avs+
-        '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit" style="font-size:11px;padding:2px 7px;opacity:0.6">&#9998;</button>'+
-        '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red);opacity:0.6">&#10005;</button>'+
+        '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit" style="font-size:11px;padding:2px 7px">&#9998; Edit</button>'+
+        '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red)">&#10005; Delete</button>'+
       '</div>'+
       '</div>';
   }).join('')+'</div>';
@@ -1095,7 +1094,7 @@ function renderTeam(){
     var entNames=entities.map(function(id){return ge(id).name;}).join(', ');
     var dotColor=(ge(entities[0]||'').color)||'#888';
     var editBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px" onclick="editMember(\'' +m.id+ '\')">&#9998; Edit</button>';
-    var delBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteMember(\'' +m.id+ '\')">&#10005;</button>';
+    var delBtn='<button class="tb-btn" style="padding:3px 10px;font-size:11px;color:var(--red);border-color:var(--red)" onclick="deleteMember(\'' +m.id+ '\')">&#10005; Delete</button>';
     var odBadge=od>0?'<span style="background:var(--red-light);color:var(--red);font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;margin-left:6px">'+od+' overdue</span>':'';
     var weekBadge=dueThisWeek>0&&od===0?'<span style="background:var(--yellow-light);color:var(--yellow);font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;margin-left:6px">'+dueThisWeek+' due soon</span>':'';
     return '<div class="mem-card">'+
@@ -1278,7 +1277,10 @@ function renderDetail(p){
     '</div>'+
     '<div class="dp-title">'+h(p.name)+'</div>'+
     '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
-    '<button class="dp-close" onclick="closeDetail()">✕</button></div>'+
+    '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
+    '<button class="dp-close" onclick="closeDetail()">✕</button>'+
+    '</div></div>'+
     '<div class="dp-body">'+
     '<div class="dp-sec"><div class="dp-sec-title">Progress</div>'+
       '<div class="prog-lbl"><span>'+pct+'%</span><span>'+dn+'/'+tasks.length+' tasks</span></div>'+
@@ -1312,8 +1314,8 @@ function renderDetail(p){
             '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:2px">'+
               '<div class="task-card-title'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
               '<div style="display:flex;gap:3px;flex-shrink:0">'+
-                '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit task" style="font-size:11px;padding:2px 7px">&#9998;</button>'+
-                '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete task" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red)">&#10005;</button>'+
+                '<button class="delbtn" onclick="event.stopPropagation();openEditTask(\''+p.id+'\',\''+t.id+'\')" title="Edit task" style="font-size:11px;padding:2px 7px">&#9998; Edit</button>'+
+                '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete task" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red)">&#10005; Delete</button>'+
               '</div>'+
             '</div>'+
             '<div class="task-card-meta">'+
@@ -1543,9 +1545,12 @@ function addNote(pid){
 }
 
 function delProj(pid){
-  if(!confirm('Delete this project? Cannot be undone.'))return;
+  if(!confirm('Delete this project? This cannot be undone.'))return;
   DB.projects=DB.projects.filter(function(p){return p.id!==pid;});
-  mutate();toast('Deleted','ok');
+  closeDetail();
+  mutate();
+  renderAll();
+  toast('Project deleted','ok');
 }
 
 // ── MODALS ──
