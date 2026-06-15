@@ -1522,9 +1522,11 @@ function addTaskComment(pid, tid){
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
   var ta=document.getElementById('tc-'+tid);
   if(!ta||!ta.value.trim())return;
+  var whoName='Team';
+  if(ST.viewAs!=='all'){var wm=gm(ST.viewAs);if(wm&&wm.name)whoName=wm.name;}
   if(!t.comments)t.comments=[];
   t.comments.push({
-    who:'Team',
+    who:whoName,
     when:new Date().toLocaleString(),
     text:ta.value.trim()
   });
@@ -1554,7 +1556,9 @@ function addNote(pid){
   var ta=document.getElementById('note-ta-'+pid);
   if(!ta||!ta.value.trim())return;
   if(!p.notes)p.notes=[];
-  p.notes.push({who:'Team',when:new Date().toLocaleString(),text:ta.value.trim()});
+  var whoNote='Team';
+  if(ST.viewAs!=='all'){var wn=gm(ST.viewAs);if(wn&&wn.name)whoNote=wn.name;}
+  p.notes.push({who:whoNote,when:new Date().toLocaleString(),text:ta.value.trim()});
   renderDetail(p);mutate();toast('Note saved','ok');
 }
 
