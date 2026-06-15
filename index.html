@@ -1649,6 +1649,22 @@ function openAddTask(pid){
       assignees:assignees
     });
     closeModal();if(ST.project===pid)renderDetail(p);mutate();toast('Task added & saved','ok');
+    if(SCRIPT_URL) {
+      assignees.forEach(function(mid) {
+        var m = gm(mid);
+        if(!m || !m.email) return;
+        var url = SCRIPT_URL + '?action=notifyAssignment' +
+          '&taskTitle=' + encodeURIComponent(title) +
+          '&projectName=' + encodeURIComponent(p.name) +
+          '&assigneeEmail=' + encodeURIComponent(m.email) +
+          '&assigneeName=' + encodeURIComponent(m.name) +
+          '&dueDate=' + encodeURIComponent(document.getElementById('nt-due').value||'') +
+          '&priority=' + encodeURIComponent(document.getElementById('nt-pri').value||'') +
+          '&notes=' + encodeURIComponent(document.getElementById('nt-notes').value.trim()||'');
+        var img = new Image();
+        img.src = url;
+      });
+    }
   };
   showModal();
 }
