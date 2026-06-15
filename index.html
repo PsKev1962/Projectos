@@ -2070,7 +2070,8 @@ function sendSLWhatsApp(){
   if(!body){alert('Please select a document or enter a once-off document link first.');return;}
   var clean=f.phone.replace(/[^0-9]/g,'');
   if(clean.charAt(0)==='0'){clean='61'+clean.slice(1);}
-  window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encodeURIComponent(body),'_blank');
+  try{navigator.clipboard.writeText(body);}catch(e){}
+  window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encodeURIComponent(body),'_blank','noopener,noreferrer');
 }
 
 </script>
