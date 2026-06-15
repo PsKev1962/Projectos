@@ -1377,8 +1377,22 @@ function importData(){
     r.onload=function(ev){
       try{
         var parsed=JSON.parse(ev.target.result);
+        // ── INTAKE FORM: merge new project in ──
+        if(parsed._intake===true){
+          if(!parsed.projects||!parsed.projects.length){alert('No project found in intake file.');return;}
+          var proj=parsed.projects[0];
+          var existing=DB.projects.find(function(p){return p.id===proj.id;});
+          if(existing){alert('This project has already been imported.');return;}
+          if(!confirm('Add project "'+proj.name+'" to ProjectOS? This will NOT affect your existing projects — it will be added alongside them.')){return;}
+          DB.projects.push(proj);
+          mutate();
+          renderAll();
+          toast('Project "'+proj.name+'" added successfully','ok');
+          return;
+        }
+        // ── FULL BACKUP: replace all data ──
         if(!parsed.entities||!parsed.projects){alert('Invalid ProjectOS backup file.');return;}
-        if(!confirm('This will replace all current data with the imported data. Continue?'))return;
+        if(!confirm('This will replace ALL current data with the imported data. Continue?'))return;
         DB=parsed;
         mutate();
         toast('Data imported successfully','ok');
