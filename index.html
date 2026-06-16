@@ -1847,7 +1847,7 @@ function openCLink(btn){
   if(!url)return;
   if(url.indexOf('mailto:')===0){
     var parts=url.replace('mailto:','').split('?');
-    var to=parts[0];
+    var to=parts[0].replace(/[<>]/g,'').trim();
     var params=parts[1]||'';
     var sub='';var bod='';
     params.split('&').forEach(function(p){
@@ -1932,7 +1932,7 @@ function renderSendLink(){
   }
   prevHtml+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">';
   prevHtml+='<button class="sl-btn sl-btn-email" onclick="sendSLEmail()">&#9993; Send Email</button>';
-  prevHtml+='<button class="sl-btn sl-btn-sms" onclick="sendSLSMS()">&#128172; SMS</button>';
+  prevHtml+='<button class="sl-btn sl-btn-sms" onclick="sendSLSMS()">&#128172; SMS</button><span style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px;">(Press Enter to send)</span>';
   prevHtml+='<button class="sl-btn sl-btn-wa" onclick="sendSLWhatsApp()">&#128233; WhatsApp</button>';
   prevHtml+='<button class="sl-btn sl-btn-secondary" onclick="clearSL()">Clear</button>';
   prevHtml+='</div></div>';
