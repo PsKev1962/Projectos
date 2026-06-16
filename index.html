@@ -1918,40 +1918,55 @@ function toast(msg,type){
 
 // ── START ──
 // ── CONTACT FUNCTIONS ──
+function isMobile(){return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);}
+
 function contactEmail(email, name, subject, body){
   var sub = encodeURIComponent(subject||'');
   var bod = encodeURIComponent(body||'');
-  window.open('mailto:'+email+'?subject='+sub+'&body='+bod);
+  if(isMobile()){
+    location.href='mailto:'+email+'?subject='+sub+'&body='+bod;
+  } else {
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+sub+'&body='+bod,'_blank');
+  }
 }
 
 function contactSMS(phone, body){
   if(!phone){alert('No phone number saved for this person.');return;}
   var encoded = encodeURIComponent(body||'');
-  // Works on iOS and Android
-  window.open('sms:'+phone+'?body='+encoded);
+  location.href='sms:'+phone+'?body='+encoded;
 }
 
 function contactWhatsApp(phone, body){
   if(!phone){alert('No phone number saved for this person.');return;}
-  // Strip non-digits and ensure international format
   var clean = phone.replace(/[^0-9]/g,'');
+  if(clean.charAt(0)==='0'){clean='61'+clean.slice(1);}
   var encoded = encodeURIComponent(body||'');
-  window.open('https://wa.me/'+clean+'?text='+encoded);
+  if(isMobile()){
+    location.href='https://wa.me/'+clean+'?text='+encoded;
+  } else {
+    window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encoded,'_blank');
+  }
 }
 
 function openCLink(btn){
   var url=decodeURIComponent(btn.getAttribute('data-url')||'');
   if(!url)return;
   if(url.indexOf('mailto:')===0){
-    var parts=url.replace('mailto:','').split('?');
-    var to=parts[0].replace(/[<>]/g,'').trim();
-    var params=parts[1]||'';
-    var sub='';var bod='';
-    params.split('&').forEach(function(p){
-      if(p.indexOf('subject=')===0)sub=p.replace('subject=','');
-      if(p.indexOf('body=')===0)bod=p.replace('body=','');
-    });
-    window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+to+'&su='+sub+'&body='+bod,'_blank');
+    if(isMobile()){
+      location.href=url;
+    } else {
+      var parts=url.replace('mailto:','').split('?');
+      var to=parts[0].replace(/[<>]/g,'').trim();
+      var params=parts[1]||'';
+      var sub='';var bod='';
+      params.split('&').forEach(function(p){
+        if(p.indexOf('subject=')===0)sub=p.replace('subject=','');
+        if(p.indexOf('body=')===0)bod=p.replace('body=','');
+      });
+      window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+to+'&su='+sub+'&body='+bod,'_blank');
+    }
+  } else if(url.indexOf('sms:')===0){
+    location.href=url;
   } else {
     window.open(url,'_blank');
   }
@@ -2149,7 +2164,11 @@ function sendSLEmail(){
   if(!body){alert('Please select a document or enter a once-off document link first.');return;}
   var odLabel=(document.getElementById('sl-onceoff-label')||{}).value||(window._slOdLabel||'');
   var subj=window._selDoc?window._selDoc.label:(odLabel||'Document Link');
-  window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(f.email)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
+  if(isMobile()){
+    location.href='mailto:'+encodeURIComponent(f.email)+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  } else {
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(f.email)+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
+  }
 }
 
 function sendSLSMS(){
@@ -2157,7 +2176,7 @@ function sendSLSMS(){
   if(!f.phone){alert('Please enter a phone number.');return;}
   var body=buildSLPreview();
   if(!body){alert('Please select a document or enter a once-off document link first.');return;}
-  window.open('sms:'+f.phone+'?body='+encodeURIComponent(body));
+  location.href='sms:'+f.phone+'?body='+encodeURIComponent(body);
 }
 
 function sendSLWhatsApp(){
@@ -2167,8 +2186,12 @@ function sendSLWhatsApp(){
   if(!body){alert('Please select a document or enter a once-off document link first.');return;}
   var clean=f.phone.replace(/[^0-9]/g,'');
   if(clean.charAt(0)==='0'){clean='61'+clean.slice(1);}
-  try{navigator.clipboard.writeText(body);}catch(e){}
-  window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encodeURIComponent(body),'_blank','noopener,noreferrer');
+  if(isMobile()){
+    location.href='https://wa.me/'+clean+'?text='+encodeURIComponent(body);
+  } else {
+    try{navigator.clipboard.writeText(body);}catch(e){}
+    window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encodeURIComponent(body),'_blank','noopener,noreferrer');
+  }
 }
 
 </script>
