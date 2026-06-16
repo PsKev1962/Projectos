@@ -383,6 +383,7 @@ a:visited{color:var(--accent);}
       <div class="sidebar-section" style="margin-top:8px;">Entities</div>
       <div class="entity-list" id="entity-list"></div>
       <div style="padding:0 6px 10px;"><div class="add-ent-btn" onclick="openNewEntity()">+ Add Entity</div></div>
+      <div id="mob-tools" style="padding:0 10px 14px;display:none;border-top:1px solid var(--border);margin-top:4px;"><div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text4);text-transform:uppercase;padding:10px 2px 6px;">Tools</div><div style="display:flex;gap:6px;"><button class="tb-btn" style="flex:1;font-size:12px;" onclick="closeMobSidebar();exportData();">&#11015; Export</button><button class="tb-btn" style="flex:1;font-size:12px;" onclick="closeMobSidebar();importData();">&#11014; Import</button></div></div>
     </div>
     <div id="main"><div class="main-inner" id="main-inner"></div></div>
     <div id="detail-panel" class="hidden"></div>
@@ -581,10 +582,11 @@ function bnav(v){
 function toggleMobSidebar(){
   var sb=document.getElementById('sidebar');
   var ov=document.getElementById('sidebar-overlay');
+  var mt=document.getElementById('mob-tools');
   if(!sb||!ov)return;
   var open=sb.classList.contains('mob-open');
   if(open){sb.classList.remove('mob-open');ov.classList.remove('mob-open');}
-  else{sb.classList.add('mob-open');ov.classList.add('mob-open');}
+  else{sb.classList.add('mob-open');ov.classList.add('mob-open');if(mt)mt.style.display='block';}
 }
 
 function closeMobSidebar(){
