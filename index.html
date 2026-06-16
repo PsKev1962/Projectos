@@ -294,8 +294,17 @@ a:visited{color:var(--accent);}
 @media(max-width:768px){
   #hamburger{display:flex;align-items:center;justify-content:center;}
   .tb-hide-mobile{display:none!important;}
-  #topbar{padding:0 12px;}
+  #topbar{padding:0 10px;overflow:hidden;}
   .topbar-tag{display:none;}
+  .topbar-brand{font-size:13px;}
+
+  /* Hide sync label and viewas on mobile — dot only */
+  #sync-lbl{display:none!important;}
+  #viewas-wrap{display:none!important;}
+  /* Shrink sync pill to just the dot */
+  .sync-pill{padding:3px 6px;min-width:0;}
+  /* Shrink Save button */
+  .tb-btn:not(.tb-hide-mobile){font-size:11px;padding:4px 8px;}
 
   /* Sidebar becomes a slide-in drawer */
   #sidebar{
@@ -328,7 +337,7 @@ a:visited{color:var(--accent);}
   .bnav-label{font-size:9px;font-weight:600;letter-spacing:.02em;}
 
   /* Main content full width on mobile */
-  #main{width:100%;}
+  #main{width:100%;overflow-x:hidden;}
   #detail-panel:not(.hidden){
     position:fixed;inset:0;z-index:150;
     background:var(--bg);overflow-y:auto;
@@ -337,11 +346,6 @@ a:visited{color:var(--accent);}
   /* Reduce page header padding on mobile */
   .page-header{padding:12px 14px 8px!important;}
   .main-inner{padding:0!important;}
-
-  /* Topbar right — hide viewas, shrink sync pill to dot only */
-  #viewas-wrap{display:none!important;}
-  .sync-pill{padding:3px 6px;}
-  #sync-lbl{display:none;}
 }
 </style>
 </head>
@@ -360,7 +364,7 @@ a:visited{color:var(--accent);}
       <button class="tb-btn" onclick="doSync()">💾 Save</button>
       <button class="tb-btn tb-hide-mobile" onclick="exportData()">⬇ Export</button>
       <button class="tb-btn tb-hide-mobile" onclick="importData()">⬆ Import</button>
-      <button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button>
+      <button class="tb-btn tb-btn-accent tb-hide-mobile" onclick="openNewProject()">+ New Project</button>
     </div>
   </div>
   <div id="app-body">
