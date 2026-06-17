@@ -456,7 +456,14 @@ function defaults(){
 
 // ── SUPABASE SYNC ──
 function sbFetch(path, opts){
-  return fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({headers: SB_HEADERS}, opts||{}));
+  var options = opts || {};
+  var extraHeaders = options.headers || {};
+  var mergedHeaders = {};
+  var k;
+  for(k in SB_HEADERS) { mergedHeaders[k] = SB_HEADERS[k]; }
+  for(k in extraHeaders) { mergedHeaders[k] = extraHeaders[k]; }
+  options.headers = mergedHeaders;
+  return fetch(SUPABASE_URL + '/rest/v1/' + path, options);
 }
 
 function loadData(cb){
@@ -479,8 +486,7 @@ function loadData(cb){
     if(!Array.isArray(tasks)){tasks=[];}
     if(entities.length === 0){
       defaults();
-      setSS('ok','New database');
-      saveData(null);
+      setSS('ok','No data yet — add your first project');
       cb&&cb();
       return;
     }
@@ -529,10 +535,10 @@ function saveData(cb){
     });
   });
   var saves = [];
-  if(entityRows.length) saves.push(sbFetch('entities?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(entityRows)}));
-  if(memberRows.length) saves.push(sbFetch('team_members?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(memberRows)}));
-  if(projectRows.length) saves.push(sbFetch('projects?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(projectRows)}));
-  if(taskRows.length) saves.push(sbFetch('tasks?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(taskRows)}));
+  if(entityRows.length) saves.push(sbFetch('entities?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(entityRows)}));
+  if(memberRows.length) saves.push(sbFetch('team_members?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(memberRows)}));
+  if(projectRows.length) saves.push(sbFetch('projects?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(projectRows)}));
+  if(taskRows.length) saves.push(sbFetch('tasks?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(taskRows)}));
   Promise.all(saves).then(function(){
     setSS('ok','Saved '+new Date().toLocaleTimeString());
     if(cb) cb();
