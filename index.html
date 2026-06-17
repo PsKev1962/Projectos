@@ -269,8 +269,6 @@ a:visited{color:var(--accent);}
 .cbtn-email:hover{background:#4f46e5;color:#fff;}
 .cbtn-sms{background:#f0fdf4;color:#16a34a;}
 .cbtn-sms:hover{background:#16a34a;color:#fff;}
-.cbtn-wa{background:#e7fde7;color:#075e54;}
-.cbtn-wa:hover{background:#25D366;color:#fff;}
 
 .sl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
 .sl-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:block;}
@@ -282,7 +280,6 @@ a:visited{color:var(--accent);}
 .sl-btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;margin-right:6px;}
 .sl-btn-email{background:#4f46e5;color:#fff;}
 .sl-btn-sms{background:#22c55e;color:#fff;}
-.sl-btn-wa{background:#25D366;color:#fff;}
 .sl-btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
 .sl-preview{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap;}
 
@@ -1273,7 +1270,7 @@ function editMember(id){
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" value="'+h(m.name)+'"></div>'+
     '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" value="'+h(m.email)+'"></div>'+
-    '<div class="fr"><label class="fl">Phone (for SMS & WhatsApp)</label><input class="fi" id="nm-ph" placeholder="+61412345678" value="'+(m.phone?h(m.phone):'')+'"></div>'+
+    '<div class="fr"><label class="fl">Phone (for SMS)</label><input class="fi" id="nm-ph" placeholder="+61412345678" value="'+(m.phone?h(m.phone):'')+'"></div>'+
     '<div class="fr"><label class="fl">Entities</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
@@ -1397,7 +1394,7 @@ function renderDetail(p){
     '</select></div>';
   html+='<div class="dp-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
     '<div class="dp-sec-title" style="margin:0">Tasks</div>'+
-    '<button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="openAddTask(\''+p.id+'\')">+ Add</button></div>';
+    '<button class="btn btn-primary" style="padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:0.3px" onclick="openAddTask(\''+p.id+'\')">+ Add</button></div>';
   if(!tasks.length){
     html+='<div style="padding:12px;text-align:center;color:var(--text4);font-size:12px;border:1px solid var(--border);border-radius:6px">No tasks yet</div>';
   }else{
@@ -1841,7 +1838,7 @@ function openNewMember(){
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" placeholder="e.g. Sam Jones"></div>'+
     '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" placeholder="sam@company.com"></div>'+
-    '<div class="fr"><label class="fl">Phone (for SMS & WhatsApp)</label><input class="fi" id="nm-ph" placeholder="e.g. +61412345678"></div>'+
+    '<div class="fr"><label class="fl">Phone (for SMS)</label><input class="fi" id="nm-ph" placeholder="e.g. +61412345678"></div>'+
     '<div class="fr"><label class="fl">Entities (select all that apply)</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
@@ -1929,17 +1926,6 @@ function contactSMS(phone, body){
   location.href='sms:'+phone+'?body='+encoded;
 }
 
-function contactWhatsApp(phone, body){
-  if(!phone){alert('No phone number saved for this person.');return;}
-  var clean = phone.replace(/[^0-9]/g,'');
-  if(clean.charAt(0)==='0'){clean='61'+clean.slice(1);}
-  var encoded = encodeURIComponent(body||'');
-  if(isMobile()){
-    location.href='https://wa.me/'+clean+'?text='+encoded;
-  } else {
-    window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encoded,'_blank');
-  }
-}
 
 function openCLink(btn){
   var url=decodeURIComponent(btn.getAttribute('data-url')||'');
@@ -1973,17 +1959,16 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
     : 'Hi '+m.name.split(' ')[0]+',\n\n';
   var _emailUrl = m.email ? 'mailto:'+m.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body) : '';
   var _smsUrl = m.phone ? 'sms:'+m.phone+'?body='+encodeURIComponent(body) : '';
-  var _waUrl = m.phone ? 'https://wa.me/'+m.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(body) : '';
+
   var emailBtn = m.email
     ? '<button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">&#9993; Email</button>'
     : '<span class="cbtn cbtn-email" style="opacity:.4;cursor:default" title="Add email to enable">&#9993; Email</span>';
   var smsBtn = m.phone
     ? '<button class="cbtn cbtn-sms" onclick="openCLink(this)" data-url="'+encodeURIComponent(_smsUrl)+'">&#128172; SMS</button>'
     : '<span class="cbtn cbtn-sms" style="opacity:.4;cursor:default" title="Add phone number to enable SMS">&#128172; SMS</span>';
-  var waUrl2 = m.phone ? 'https://wa.me/'+m.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(body) : '';
+
   var waBtn = m.phone
-    ? '<button class="cbtn cbtn-wa" onclick="openCLink(this)" data-url="'+encodeURIComponent(_waUrl)+'">&#128233; WhatsApp</button>'
-    : '<span class="cbtn cbtn-wa" style="opacity:.4;cursor:default" title="Add phone number to enable WhatsApp">&#128233; WhatsApp</span>';
+    ''
   return '<div class="contact-btns">'+emailBtn+smsBtn+waBtn+'</div>';
 }
 
@@ -2026,12 +2011,12 @@ function renderSendLink(){
   prevHtml+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">';
   prevHtml+='<button class="sl-btn sl-btn-email" onclick="sendSLEmail()">&#9993; Send Email</button>';
   prevHtml+='<button class="sl-btn sl-btn-sms" onclick="sendSLSMS()">&#128172; SMS</button><span style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px;">(Press Enter to send)</span>';
-  prevHtml+='<button class="sl-btn sl-btn-wa" onclick="sendSLWhatsApp()">&#128233; WhatsApp</button>';
+  prevHtml+='';
   prevHtml+='<button class="sl-btn sl-btn-secondary" onclick="clearSL()">Clear</button>';
   prevHtml+='</div></div>';
   var html='<div style="max-width:700px">';
   html+='<h2 style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)">Send a Link</h2>';
-  html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email, SMS or WhatsApp while they are still on the phone.</p>';
+  html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email or SMS while they are still on the phone.</p>';
   var _slN=window._slName||'';var _slE=window._slEmail||'';var _slP=window._slPhone||'';
   var _slOdL=window._slOdLabel||'';var _slOdU=window._slOdUrl||'';
   html+='<div class="sl-card"><span class="sl-label">Recipient Details</span>';
@@ -2039,7 +2024,7 @@ function renderSendLink(){
   html+='<div><label class="sl-label">First Name</label><input class="sl-input" id="sl-name" placeholder="e.g. Sarah" value="'+h(_slN)+'" oninput="refreshSLPreview()" /></div>';
   html+='<div><label class="sl-label">Email Address</label><input class="sl-input" id="sl-email" placeholder="sarah@example.com" value="'+h(_slE)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
-  html+='<div><label class="sl-label">Phone Number (SMS / WhatsApp)</label><input class="sl-input" id="sl-phone" placeholder="e.g. 0412 345 678" value="'+h(_slP)+'" oninput="refreshSLPreview()" /></div>';
+  html+='<div><label class="sl-label">Phone Number (SMS)</label><input class="sl-input" id="sl-phone" placeholder="e.g. 0412 345 678" value="'+h(_slP)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
   html+='<div class="sl-card"><span class="sl-label">Once-off Document / Link (optional)</span>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
@@ -2160,20 +2145,6 @@ function sendSLSMS(){
   location.href='sms:'+f.phone+'?body='+encodeURIComponent(body);
 }
 
-function sendSLWhatsApp(){
-  var f=getSLFields();
-  if(!f.phone){alert('Please enter a phone number.');return;}
-  var body=buildSLPreview();
-  if(!body){alert('Please select a document or enter a once-off document link first.');return;}
-  var clean=f.phone.replace(/[^0-9]/g,'');
-  if(clean.charAt(0)==='0'){clean='61'+clean.slice(1);}
-  if(isMobile()){
-    location.href='https://wa.me/'+clean+'?text='+encodeURIComponent(body);
-  } else {
-    try{navigator.clipboard.writeText(body);}catch(e){}
-    window.open('https://web.whatsapp.com/send?phone='+clean+'&text='+encodeURIComponent(body),'_blank','noopener,noreferrer');
-  }
-}
 
 </script>
 </body>
