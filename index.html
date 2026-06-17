@@ -1307,6 +1307,40 @@ function deleteMember(id){
   mutate();toast('Member deleted','ok');
 }
 
+var SUGGEST_HELP_TO='admin@ourchurch.org.au';
+function openSuggestHelp(pid){
+  var p=gp(pid);if(!p)return;
+  document.getElementById('modal-title').textContent='Suggest Help — '+p.name;
+  document.getElementById('modal-body').innerHTML=
+    '<div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5">Know someone who could help with this project? Add their details below and we\'ll pass them on for follow-up.</div>'+
+    '<div class="fr"><label class="fl">Their Name *</label><input class="fi" id="sh-name" placeholder="e.g. Sarah Jones"></div>'+
+    '<div class="fr"><label class="fl">Their Email</label><input class="fi" id="sh-email" type="email" placeholder="sarah@example.com"></div>'+
+    '<div class="fr"><label class="fl">Their Phone</label><input class="fi" id="sh-phone" placeholder="+61412345678"></div>'+
+    '<div class="fr"><label class="fl">How can they help? (optional)</label><textarea class="fta" id="sh-note" style="min-height:60px" placeholder="e.g. Has video editing experience and offered to help."></textarea></div>'+
+    '<div class="fr"><label class="fl">Suggested by (your name)</label><input class="fi" id="sh-by" placeholder="Your name" value="'+h((ST.viewAs&&ST.viewAs!=='all'&&gm(ST.viewAs).name!=='?')?gm(ST.viewAs).name:'')+'"></div>';
+  document.getElementById('modal-submit').textContent='Send Suggestion';
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('sh-name').value.trim();
+    if(!nm){alert('Please enter the person\'s name.');return;}
+    var em=document.getElementById('sh-email').value.trim();
+    var ph=document.getElementById('sh-phone').value.trim();
+    var note=document.getElementById('sh-note').value.trim();
+    var by=document.getElementById('sh-by').value.trim();
+    var subject='Suggested Help for: '+p.name;
+    var body='A team member has suggested someone who could help with the project "'+p.name+'".\n\n'+
+      'Name: '+nm+'\n'+
+      'Email: '+(em||'(not provided)')+'\n'+
+      'Phone: '+(ph||'(not provided)')+'\n'+
+      'How they can help: '+(note||'(not provided)')+'\n'+
+      'Suggested by: '+(by||'(not provided)')+'\n';
+    closeModal();
+    contactEmail(SUGGEST_HELP_TO, '', subject, body);
+    toast('Opening email to send suggestion','ok');
+  };
+  showModal();
+  setTimeout(function(){var el=document.getElementById('sh-name');if(el)el.focus();},80);
+}
+
 function editEntity(id){
   var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
   var colOpts=COLORS.map(function(c){
@@ -1391,6 +1425,7 @@ function renderDetail(p){
     '<div class="dp-title">'+h(p.name)+'</div>'+
     '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
     '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--accent);border-color:var(--accent)" onclick="openSuggestHelp(\''+p.id+'\')" title="Suggest someone who can help">🙋 Suggest Help</button>'+
     '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
     '<button class="dp-close" onclick="closeDetail()">✕</button>'+
     '</div></div>'+
