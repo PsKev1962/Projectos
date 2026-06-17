@@ -1400,6 +1400,10 @@ function renderDetail(p){
     '<select class="st-sel" onchange="updateStatus(\''+p.id+'\',this.value)">'+
     ['planning','active','hold','risk','done'].map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('')+
     '</select></div>';
+  html+='<div class="dp-sec"><div class="dp-sec-title">Entity</div>'+
+    '<select class="st-sel" onchange="updateProjEntity(\''+p.id+'\',this.value)">'+
+    DB.entities.map(function(e){return '<option value="'+e.id+'"'+(p.entity===e.id?' selected':'')+'>'+h(e.name)+'</option>';}).join('')+
+    '</select></div>';
   html+='<div class="dp-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
     '<div class="dp-sec-title" style="margin:0">Tasks</div>'+
     '<button class="btn btn-primary" style="padding:10px 22px;font-size:14px;font-weight:700;background:var(--accent);color:#fff;border:2px solid var(--accent);border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(79,70,229,0.3)" onclick="openAddTask(\''+p.id+'\')">+ Add Task</button></div>';
@@ -1667,6 +1671,7 @@ function toggleTask(pid,tid){
 }
 
 function updateStatus(pid,val){var p=gp(pid);if(!p)return;p.status=val;mutate();}
+function updateProjEntity(pid,val){var p=gp(pid);if(!p)return;p.entity=val;mutate();renderAll();toast('Project moved to '+ge(val).name,'ok');}
 
 function addNote(pid){
   var p=gp(pid);if(!p)return;
