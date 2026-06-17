@@ -1394,7 +1394,7 @@ function renderDetail(p){
     '</select></div>';
   html+='<div class="dp-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
     '<div class="dp-sec-title" style="margin:0">Tasks</div>'+
-    '<button class="btn btn-primary" style="padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:0.3px" onclick="openAddTask(\''+p.id+'\')">+ Add</button></div>';
+    '<button class="btn btn-primary" style="padding:10px 22px;font-size:14px;font-weight:700;background:var(--accent);color:#fff;border:2px solid var(--accent);border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(79,70,229,0.3)" onclick="openAddTask(\''+p.id+'\')">+ Add Task</button></div>';
   if(!tasks.length){
     html+='<div style="padding:12px;text-align:center;color:var(--text4);font-size:12px;border:1px solid var(--border);border-radius:6px">No tasks yet</div>';
   }else{
@@ -1446,6 +1446,7 @@ function renderDetail(p){
       '</div>';
     }).join('');
   }
+  html+='<button onclick="openAddTask(''+p.id+'')" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:700;color:var(--accent);background:transparent;border:2px dashed var(--accent);border-radius:8px;cursor:pointer;text-align:center;transition:background .15s" onmouseover="this.style.background='rgba(79,70,229,0.07)'" onmouseout="this.style.background='transparent'">+ Add Task</button>';
   html+='</div>';
   var notes=p.notes||[];
   html+='<div class="dp-sec"><div class="dp-sec-title">Notes</div>'+
@@ -1958,7 +1959,7 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
     ? 'Hi '+m.name.split(' ')[0]+',\n\nJust following up on your task: '+taskTitle+'\nProject: '+projName+docPart+'\n\n'
     : 'Hi '+m.name.split(' ')[0]+',\n\n';
   var _emailUrl = m.email ? 'mailto:'+m.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body) : '';
-  var _smsUrl = m.phone ? 'sms:'+m.phone+'?body='+encodeURIComponent(body) : '';
+  var _smsUrl = m.phone ? 'sms:'+m.phone.replace(/[^0-9+]/g,'')+'?body='+encodeURIComponent(body) : '';
 
   var emailBtn = m.email
     ? '<button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">&#9993; Email</button>'
@@ -1967,9 +1968,7 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
     ? '<button class="cbtn cbtn-sms" onclick="openCLink(this)" data-url="'+encodeURIComponent(_smsUrl)+'">&#128172; SMS</button>'
     : '<span class="cbtn cbtn-sms" style="opacity:.4;cursor:default" title="Add phone number to enable SMS">&#128172; SMS</span>';
 
-  var waBtn = m.phone
-    ''
-  return '<div class="contact-btns">'+emailBtn+smsBtn+waBtn+'</div>';
+  return '<div class="contact-btns">'+emailBtn+smsBtn+'</div>';
 }
 
 // Load from local storage instantly
