@@ -413,9 +413,9 @@ a:visited{color:var(--accent);}
 // CONFIGURATION — paste your Google Apps Script URL here
 // after completing the one-time setup in the Squarespace view
 // ═══════════════════════════════════════════════════════════
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPkiN3PDsfDVssBaGj2M86jtaJlN1vZWgnAui-d9_2AwBmhXkkI5AicaillGQ2dxeT/exec';
-var SHEET_ID = '1CvbmCZhsyPTDfxUYLYxUwodfc28LlPSY61agOdmaA3U';
-var SHEET_LINK = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID;
+var SUPABASE_URL = 'https://zybjazzlfahpriiwalnu.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5YmphenpsamZhaHByaWl3YWxudSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzUwMTI1MTY0LCJleHAiOjIwNjU3MDExNjR9.XmyOArP-zPdlT3zHorsVGMZaldN45NlH5ZgtmSMHYfY';
+var SB_HEADERS = {'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
 
 var COLORS = ['#4f46e5','#22c55e','#f97316','#ef4444','#3b82f6','#eab308','#8b5cf6','#14b8a6'];
 
@@ -457,47 +457,91 @@ function defaults(){
   };
 }
 
-// ── GOOGLE APPS SCRIPT SYNC ──
+// ── SUPABASE SYNC ──
+function sbFetch(path, opts){
+  return fetch(SUPABASE_URL + '/rest/v1/' + path, Object.assign({headers: SB_HEADERS}, opts||{}));
+}
+
 function loadData(cb){
-  if(!SCRIPT_URL){
-    setSS('ok','Local data');
+  setSS('syncing','Loading...');
+  Promise.all([
+    sbFetch('entities?select=*&order=created_at').then(function(r){return r.json();}),
+    sbFetch('team_members?select=*&order=created_at').then(function(r){return r.json();}),
+    sbFetch('projects?select=*&order=created_at').then(function(r){return r.json();}),
+    sbFetch('tasks?select=*&order=created_at').then(function(r){return r.json();})
+  ]).then(function(results){
+    var entities = results[0];
+    var members = results[1];
+    var projects = results[2];
+    var tasks = results[3];
+    if(!Array.isArray(entities)){entities=[];}
+    if(!Array.isArray(members)){members=[];}
+    if(!Array.isArray(projects)){projects=[];}
+    if(!Array.isArray(tasks)){tasks=[];}
+    if(entities.length === 0){
+      defaults();
+      setSS('ok','New database');
+      saveData(null);
+      cb&&cb();
+      return;
+    }
+    // Rebuild DB structure from flat Supabase tables
+    DB.entities = entities.map(function(e){
+      return {id:e.id, name:e.name, color:e.color, short:e.short||e.name.substring(0,2).toUpperCase()};
+    });
+    DB.members = members.map(function(m){
+      return {id:m.id, name:m.name, role:m.role||'', email:m.email||'', phone:m.phone||'', color:m.color||'#888', initials:m.initials||m.name.substring(0,2).toUpperCase(), entity:m.entity_id};
+    });
+    DB.projects = projects.map(function(p){
+      var ptasks = tasks.filter(function(t){return t.project_id===p.id;}).map(function(t){
+        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||''};
+      });
+      return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
+    });
+    DB.pdfDocs = DB.pdfDocs||[];
+    setSS('ok','Synced '+new Date().toLocaleTimeString());
+    localSave();
+    cb&&cb();
+  }).catch(function(err){
+    console.error('Supabase load error',err);
     var bk=localStorage.getItem('pos_db');
     if(bk){try{DB=JSON.parse(bk);}catch(e){defaults();}}else{defaults();}
+    setSS('error','Offline — local copy');
     cb&&cb();
-    return;
-  }
-  setSS('syncing','Loading...');
-  var url=SCRIPT_URL+'?t='+Date.now();
-  fetch(url)
-    .then(function(r){return r.json();})
-    .then(function(res){
-      if(res.ok&&res.data&&res.data.entities){
-        DB=res.data;
-        setSS('ok','Synced '+new Date().toLocaleTimeString());
-        localSave();
-      } else {
-        defaults();
-        setSS('ok','New database');
-        saveData(null);
-      }
-      cb&&cb();
-    })
-    .catch(function(){
-      var bk=localStorage.getItem('pos_db');
-      if(bk){try{DB=JSON.parse(bk);}catch(e){defaults();}}else{defaults();}
-      setSS('error','Offline — local copy');
-      cb&&cb();
-    });
+  });
 }
 
 function saveData(cb){
   localSave();
-  setSS('ok','Saved '+new Date().toLocaleTimeString());
-  if(cb) cb();
-  if(!SCRIPT_URL) return;
-  var encoded = encodeURIComponent(JSON.stringify(DB));
-  var url = SCRIPT_URL + '?action=save&data=' + encoded;
-  fetch(url, {mode:'no-cors'}).catch(function(){});
+  setSS('syncing','Saving...');
+  // Flatten DB to Supabase tables using upsert
+  var entityRows = DB.entities.map(function(e){
+    return {id:e.id, name:e.name, color:e.color||'#888', short:e.short||e.name.substring(0,2).toUpperCase()};
+  });
+  var memberRows = DB.members.map(function(m){
+    return {id:m.id, name:m.name, role:m.role||'', email:m.email||'', phone:m.phone||'', color:m.color||'#888', initials:m.initials||m.name.substring(0,2).toUpperCase(), entity_id:m.entity||null};
+  });
+  var projectRows = [];
+  var taskRows = [];
+  DB.projects.forEach(function(p){
+    projectRows.push({id:p.id, name:p.name, description:p.desc||'', status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due_date:p.due||null, lead:p.lead||null, members:p.members||[], notes:p.notes||[], docs:p.docs||[], entity_id:p.entity||null});
+    (p.tasks||[]).forEach(function(t){
+      taskRows.push({id:t.id, title:t.title, description:t.desc||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], project_id:p.id, entity_id:p.entity||null});
+    });
+  });
+  var saves = [];
+  if(entityRows.length) saves.push(sbFetch('entities?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(entityRows)}));
+  if(memberRows.length) saves.push(sbFetch('team_members?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(memberRows)}));
+  if(projectRows.length) saves.push(sbFetch('projects?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(projectRows)}));
+  if(taskRows.length) saves.push(sbFetch('tasks?on_conflict=id',{method:'POST',headers:Object.assign({'Prefer':'resolution=merge-duplicates'},SB_HEADERS),body:JSON.stringify(taskRows)}));
+  Promise.all(saves).then(function(){
+    setSS('ok','Saved '+new Date().toLocaleTimeString());
+    if(cb) cb();
+  }).catch(function(err){
+    console.error('Supabase save error',err);
+    setSS('error','Save failed');
+    if(cb) cb();
+  });
 }
 
 function localSave(){try{localStorage.setItem('pos_db',JSON.stringify(DB));}catch(e){}}
@@ -523,21 +567,10 @@ function setViewAs(id){
 
 
 function doSync(){
-  localSave();
-  setSS('ok','Saved '+new Date().toLocaleTimeString());
-  toast('Data saved','ok');
-  if(!SCRIPT_URL) return;
-  // Fire and forget to Google Sheet — no-cors avoids redirect errors
-  setSS('syncing','Saving...');
-  var encoded = encodeURIComponent(JSON.stringify(DB));
-  var url = SCRIPT_URL + '?action=save&data=' + encoded;
-  fetch(url, {mode:'no-cors'})
-    .then(function(){
-      setSS('ok','Saved '+new Date().toLocaleTimeString());
-    })
-    .catch(function(){
-      setSS('ok','Saved locally');
-    });
+  toast('Saving...','ok');
+  saveData(function(){
+    toast('Saved to Supabase','ok');
+  });
 }
 
 function mutate(){saveData(null);renderAll();}
@@ -1320,41 +1353,14 @@ function renderSQ(){
     '<div class="section-header"><div class="section-title">Quick Access</div></div>'+
     '<div class="sq-links">'+links.map(function(l){return '<a href="'+l.url+'" target="_blank" class="sq-link"><div class="sq-li">'+l.icon+'</div><div class="sq-ll">'+l.label+'</div><div class="sq-ls">'+l.sub+'</div></a>';}).join('')+'</div>';
 
-  if(!SCRIPT_URL){
-    html+='<div class="setup-banner">'+
-      '<strong>⚙️ One-time Google Sheets setup required</strong><br>'+
-      'To sync data across all computers, you need to connect Google Sheets by setting up a free Google Apps Script.<br><br>'+
-      '<strong>Step 1:</strong> <a href="https://script.google.com" target="_blank">Open script.google.com</a> → New Project<br>'+
-      '<strong>Step 2:</strong> Delete all existing code and paste the script from the file you downloaded called <strong>ProjectOS-GoogleScript.js</strong><br>'+
-      '<strong>Step 3:</strong> Click <strong>Deploy → New Deployment → Web App</strong><br>'+
-      '<strong>Step 4:</strong> Set "Execute as" = <strong>Me</strong> · "Who has access" = <strong>Anyone</strong> → Deploy<br>'+
-      '<strong>Step 5:</strong> Copy the Web App URL and paste it below:<br><br>'+
-      '<input id="script-url-input" class="fi" placeholder="https://script.google.com/macros/s/..." style="margin-bottom:8px">'+
-      '<button class="btn btn-primary" onclick="saveScriptUrl()" style="font-size:12px;padding:6px 14px">Save & Connect</button>'+
-      '</div>';
-  } else {
-    html+='<div style="background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius);padding:16px;font-size:13px;margin-bottom:16px">'+
-      '<strong style="color:var(--green)">✅ Google Sheets connected</strong><br>'+
-      '<span style="color:var(--text3);font-size:12px">All data syncs automatically to your shared Google Sheet.</span><br>'+
-      '<a href="'+SHEET_LINK+'" target="_blank" style="color:var(--accent);font-size:12px">Open Google Sheet →</a></div>'+
-      '<button class="tb-btn" onclick="resetScriptUrl()" style="font-size:12px">Disconnect / Change Script URL</button>';
-  }
+  html+='<div style="background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius);padding:16px;font-size:13px;margin-bottom:16px">'+
+      '<strong style="color:var(--green)">✅ Supabase connected</strong><br>'+
+      '<span style="color:var(--text3);font-size:12px">All data syncs automatically via Supabase.</span><br>'+
+      '<a href="https://supabase.com/dashboard/project/zybjazzlfahpriiwalnu" target="_blank" style="color:var(--accent);font-size:12px">Open Supabase Dashboard →</a></div>';
   return html;
 }
 
-function saveScriptUrl(){
-  var inp=document.getElementById('script-url-input');
-  if(!inp||!inp.value.trim()){alert('Please paste your Google Apps Script URL.');return;}
-  SCRIPT_URL=inp.value.trim();
-  localStorage.setItem('pos_script_url',SCRIPT_URL);
-  toast('Connected! Loading data...','ok');
-  loadData(function(){renderAll();});
-}
 
-function resetScriptUrl(){
-  if(!confirm('Disconnect Google Sheets? Data stays locally.'))return;
-  SCRIPT_URL='';localStorage.removeItem('pos_script_url');renderAll();
-}
 
 // ── DETAIL PANEL ──
 function selectProj(id){
@@ -1748,22 +1754,7 @@ function openAddTask(pid){
       assignees:assignees
     });
     closeModal();if(ST.project===pid)renderDetail(p);mutate();toast('Task added & saved','ok');
-    if(SCRIPT_URL) {
-      assignees.forEach(function(mid) {
-        var m = gm(mid);
-        if(!m || !m.email) return;
-        var url = SCRIPT_URL + '?action=notifyAssignment' +
-          '&taskTitle=' + encodeURIComponent(title) +
-          '&projectName=' + encodeURIComponent(p.name) +
-          '&assigneeEmail=' + encodeURIComponent(m.email) +
-          '&assigneeName=' + encodeURIComponent(m.name) +
-          '&dueDate=' + encodeURIComponent(document.getElementById('nt-due').value||'') +
-          '&priority=' + encodeURIComponent(document.getElementById('nt-pri').value||'') +
-          '&notes=' + encodeURIComponent(document.getElementById('nt-notes').value.trim()||'');
-        var img = new Image();
-        img.src = url;
-      });
-    }
+
   };
   showModal();
 }
@@ -2006,21 +1997,9 @@ loadViewAs();
 renderAll();
 renderViewAsPill();
 
-// Sync with Google Sheet silently after 2 seconds
+// Auto-refresh from Supabase after 2 seconds
 setTimeout(function(){
-  if(!SCRIPT_URL) return;
-  setSS('syncing','Syncing...');
-  fetch(SCRIPT_URL + '?t=' + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(res){
-      if(res.ok && res.data && res.data.projects){
-        DB = res.data;
-        localSave();
-        setSS('ok','Synced ' + new Date().toLocaleTimeString());
-        renderAll();
-      } else { setSS('ok','Local data'); }
-    })
-    .catch(function(){ setSS('error','Offline'); });
+  loadData(function(){ renderAll(); });
 }, 2000);
 
 function renderSendLink(){
