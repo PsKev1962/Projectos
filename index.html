@@ -471,7 +471,6 @@ function sbFetch(path, opts){
 
 function loadData(cb){
   setSS('syncing','Loading...');
-  console.log('ProjectOS: starting Supabase load...');
   Promise.all([
     sbFetch('entities?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('team_members?select=*&order=created_at').then(function(r){return r.json();}),
@@ -482,7 +481,6 @@ function loadData(cb){
     var members = results[1];
     var projects = results[2];
     var tasks = results[3];
-    console.log('ProjectOS Supabase results:', entities, projects, tasks);
     if(!Array.isArray(entities)){entities=[];}
     if(!Array.isArray(members)){members=[];}
     if(!Array.isArray(projects)){projects=[];}
@@ -558,12 +556,16 @@ function saveViewAs(id){ST.viewAs=id;try{localStorage.setItem('pos_viewas',id);}
 function renderViewAsPill(){
   var el=document.getElementById('viewas-wrap');if(!el)return;
   if(!DB.members.length){el.innerHTML='';return;}
-  var opts='<option value="all"'+(ST.viewAs==='all'?' selected':'')+'>Everyone</option>'+
+  var opts='<option value="all"'+(ST.viewAs==='all'?' selected':'')+'>👤 Select your name…</option>'+
     DB.members.map(function(m){
       return '<option value="'+m.id+'"'+(ST.viewAs===m.id?' selected':'')+'>'+h(m.name)+'</option>';
     }).join('');
-  var selColor=ST.viewAs!=='all'?'background:var(--accent);color:#fff;border-color:var(--accent)':'';
-  el.innerHTML='<select id="viewas-sel" style="font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:inherit;cursor:pointer;'+selColor+'" onchange="setViewAs(this.value)">'+opts+'</select>';
+  var isSel=ST.viewAs!=='all';
+  var selStyle=isSel
+    ?'background:var(--accent);color:#fff;border-color:var(--accent)'
+    :'background:#fff7ed;color:#c2410c;border-color:#fb923c;font-weight:600';
+  var title=isSel?'Viewing as yourself':'Set this to your name so your comments and tasks are tagged to you';
+  el.innerHTML='<select id="viewas-sel" title="'+title+'" style="font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);font-family:inherit;cursor:pointer;'+selStyle+'" onchange="setViewAs(this.value)">'+opts+'</select>';
 }
 
 function setViewAs(id){
