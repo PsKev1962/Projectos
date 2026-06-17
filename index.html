@@ -461,6 +461,7 @@ function sbFetch(path, opts){
 
 function loadData(cb){
   setSS('syncing','Loading...');
+  console.log('ProjectOS: starting Supabase load...');
   Promise.all([
     sbFetch('entities?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('team_members?select=*&order=created_at').then(function(r){return r.json();}),
@@ -471,6 +472,7 @@ function loadData(cb){
     var members = results[1];
     var projects = results[2];
     var tasks = results[3];
+    console.log('ProjectOS Supabase results:', entities, projects, tasks);
     if(!Array.isArray(entities)){entities=[];}
     if(!Array.isArray(members)){members=[];}
     if(!Array.isArray(projects)){projects=[];}
