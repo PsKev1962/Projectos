@@ -1446,7 +1446,7 @@ function renderDetail(p){
       '</div>';
     }).join('');
   }
-  html+='<button onclick="openAddTask(''+p.id+'')" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:700;color:var(--accent);background:transparent;border:2px dashed var(--accent);border-radius:8px;cursor:pointer;text-align:center;transition:background .15s" onmouseover="this.style.background='rgba(79,70,229,0.07)'" onmouseout="this.style.background='transparent'">+ Add Task</button>';
+  html+='<button onclick="openAddTask(\''+p.id+'\')" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:700;color:var(--accent);background:transparent;border:2px dashed var(--accent);border-radius:8px;cursor:pointer;text-align:center;transition:background .15s">+ Add Task</button>';
   html+='</div>';
   var notes=p.notes||[];
   html+='<div class="dp-sec"><div class="dp-sec-title">Notes</div>'+
