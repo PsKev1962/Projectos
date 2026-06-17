@@ -1438,6 +1438,7 @@ function renderDetail(p){
               '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
                 '<div class="task-assignees" style="padding-left:4px">'+avs+'</div>'+
                 '<span style="font-size:11px;color:var(--text3)">'+names+'</span>'+
+                ((!asgn.length&&t.assignNote)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">Suggested: '+h(t.assignNote)+'</span>':'')+
               '</div>'+
               (t.docUrl?'<div style="margin:4px 0 6px"><a href="'+h(t.docUrl)+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">&#128196; '+h(t.docLabel||'View Document')+'</a></div>':'')+
               asgn.map(function(id){return memberContactBtns(gm(id),t.title,p.name,t.docUrl,t.docLabel);}).join('')+
@@ -1615,9 +1616,11 @@ function taskCommentsHTML(pid, t){
   var html='<div class="task-comments">';
   if(comments.length){
     html+=comments.map(function(c){
+      var who = c.who||c.author||'';
+      var when = c.when||c.date||'';
       return '<div class="task-comment">'+
-        '<span class="task-comment-who">'+h(c.who)+'</span>'+
-        '<span class="task-comment-when">'+h(c.when)+'</span>'+
+        '<span class="task-comment-who">'+h(who)+'</span>'+
+        '<span class="task-comment-when">'+h(when)+'</span>'+
         '<div class="task-comment-text">'+h(c.text)+'</div>'+
         '</div>';
     }).join('');
