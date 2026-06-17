@@ -1974,20 +1974,12 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
   return '<div class="contact-btns">'+emailBtn+smsBtn+'</div>';
 }
 
-// Load from local storage instantly
-try {
-  var backup = localStorage.getItem('pos_db');
-  if(backup) { DB = JSON.parse(backup); } else { defaults(); }
-} catch(e) { defaults(); }
-
+// Always load from Supabase on startup — never trust localStorage as primary
 loadViewAs();
+defaults();
 renderAll();
 renderViewAsPill();
-
-// Auto-refresh from Supabase after 2 seconds
-setTimeout(function(){
-  loadData(function(){ renderAll(); });
-}, 2000);
+loadData(function(){ renderAll(); renderViewAsPill(); });
 
 function renderSendLink(){
   var docs = DB.pdfDocs || [];
