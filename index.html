@@ -1426,6 +1426,7 @@ function editEntity(id){
     '<div class="fr"><label class="fl">Short Code (2-3 letters)</label><input class="fi" id="ne-sh" value="'+h(e.short)+'" maxlength="3" style="text-transform:uppercase"></div>'+
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
   window._col=e.color;
+  document.getElementById('modal-submit').textContent='Save Changes';
   document.getElementById('modal-submit').onclick=function(){
     var nm=document.getElementById('ne-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
     e.name=nm;
@@ -1829,6 +1830,7 @@ function openNewProject(tplId){
       '<div><label class="fl">Priority</label><select class="fs" id="np-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div></div>'+
     '<div class="fr"><label class="fl">Due Date</label><input class="fi" id="np-due" type="date"></div>'+
     '<div class="fr"><label class="fl">Description</label><textarea class="fta" id="np-desc" placeholder="Brief description..."></textarea></div>';
+  document.getElementById('modal-submit').textContent='Create Project';
   document.getElementById('modal-submit').onclick=function(){
     var nm=document.getElementById('np-nm').value.trim();
     if(!nm){alert('Please enter a project name.');return;}
@@ -1905,6 +1907,7 @@ function openAddTask(pid){
     '<div class="fr"><label class="fl">Document / Link (optional)</label>'+
       '<input class="fi" id="nt-doc-label" placeholder="e.g. Intake Form, Welcome Pack" style="margin-bottom:6px">'+
       '<input class="fi" id="nt-doc-url" placeholder="https://drive.google.com/..."></div>';
+  document.getElementById('modal-submit').textContent='Add Task';
   document.getElementById('modal-submit').onclick=function(){
     var title=document.getElementById('nt-title').value.trim();
     if(!title){alert('Please enter a task title.');return;}
@@ -2020,6 +2023,7 @@ function openNewMember(){
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
     COLORS.map(function(c,i){return '<div class="co'+(i===0?' sel':'')+'" style="background:'+c+'" onclick="pickCol(this,\''+c+'\')"></div>';}).join('')+'</div></div>';
   window._col=COLORS[0];
+  document.getElementById('modal-submit').textContent='Add Member';
   document.getElementById('modal-submit').onclick=function(){
     var nm=document.getElementById('nm-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
     var cbs=document.querySelectorAll('.nm-ent-cb:checked');
@@ -2041,6 +2045,7 @@ function openNewEntity(){
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
     COLORS.map(function(c,i){return '<div class="co'+(i===0?' sel':'')+'" style="background:'+c+'" onclick="pickCol(this,\''+c+'\')"></div>';}).join('')+'</div></div>';
   window._col=COLORS[0];
+  document.getElementById('modal-submit').textContent='Add Entity';
   document.getElementById('modal-submit').onclick=function(){
     var nm=document.getElementById('ne-nm').value.trim();if(!nm){alert('Please enter a name.');return;}
     var sh=(document.getElementById('ne-sh').value.trim().toUpperCase()||nm.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase());
