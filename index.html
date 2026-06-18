@@ -1500,6 +1500,7 @@ function renderDetail(p){
     '</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;border-bottom:1px solid var(--border)">'+
     '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:#fff;background:var(--green);border-color:var(--green)" onclick="openKickOff(\''+p.id+'\')" title="Email everyone with a task on this project that we are underway">🚀 Kick Off</button>'+
+    '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:var(--accent);border-color:var(--accent)" onclick="openEditProject(\''+p.id+'\')" title="Edit project name, lead, due date and details">✏️ Edit</button>'+
     '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:var(--accent);border-color:var(--accent)" onclick="openSuggestHelp(\''+p.id+'\')" title="Suggest someone who can help">🙋 Suggest Help</button>'+
     '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
     '</div>'+
@@ -1835,6 +1836,41 @@ function openNewProject(tplId){
     closeModal();mutate();toast('Project created & saved','ok');
   };
   showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
+}
+
+function openEditProject(pid){
+  var p=gp(pid);if(!p)return;
+  var eo=DB.entities.map(function(e){return '<option value="'+e.id+'"'+(p.entity===e.id?' selected':'')+'>'+h(e.name)+'</option>';}).join('');
+  var mo='<option value="">— No lead —</option>'+DB.members.map(function(m){return '<option value="'+m.id+'"'+(p.lead===m.id?' selected':'')+'>'+h(m.name)+'</option>';}).join('');
+  var statOpts=['planning','active','hold','risk','done'].map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</option>';}).join('');
+  var priOpts=[['high','High'],['med','Medium'],['low','Low']].map(function(o){return '<option value="'+o[0]+'"'+(p.priority===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  document.getElementById('modal-title').textContent='Edit Project';
+  document.getElementById('modal-body').innerHTML=
+    '<div class="fr"><label class="fl">Project Name *</label><input class="fi" id="ep-nm" value="'+h(p.name)+'"></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Entity</label><select class="fs" id="ep-ent">'+eo+'</select></div>'+
+      '<div><label class="fl">Lead</label><select class="fs" id="ep-lead">'+mo+'</select></div></div>'+
+    '<div class="fr2">'+
+      '<div><label class="fl">Status</label><select class="fs" id="ep-stat">'+statOpts+'</select></div>'+
+      '<div><label class="fl">Priority</label><select class="fs" id="ep-pri">'+priOpts+'</select></div></div>'+
+    '<div class="fr"><label class="fl">Due Date</label><input class="fi" id="ep-due" type="date" value="'+(p.due||'')+'"></div>'+
+    '<div class="fr"><label class="fl">Description</label><textarea class="fta" id="ep-desc" style="min-height:70px">'+h(p.desc||'')+'</textarea></div>';
+  document.getElementById('modal-submit').textContent='Save Changes';
+  document.getElementById('modal-submit').onclick=function(){
+    var nm=document.getElementById('ep-nm').value.trim();
+    if(!nm){alert('Please enter a project name.');return;}
+    p.name=nm;
+    p.entity=document.getElementById('ep-ent').value;
+    p.lead=document.getElementById('ep-lead').value||null;
+    p.status=document.getElementById('ep-stat').value;
+    p.priority=document.getElementById('ep-pri').value;
+    p.due=document.getElementById('ep-due').value||null;
+    p.desc=document.getElementById('ep-desc').value.trim();
+    closeModal();mutate();
+    if(ST.project===pid)renderDetail(p);
+    toast('Project updated','ok');
+  };
+  showModal();setTimeout(function(){var el=document.getElementById('ep-nm');if(el){el.focus();el.select();}},80);
 }
 
 function openAddTask(pid){
