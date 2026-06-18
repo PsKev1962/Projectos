@@ -273,18 +273,18 @@ a:visited{color:var(--accent);}
 .cbtn-sms{background:#f0fdf4;color:#16a34a;}
 .cbtn-sms:hover{background:#16a34a;color:#fff;}
 
-.sl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
+.sl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;max-width:100%;box-sizing:border-box;}
 .sl-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:block;}
 .sl-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--bg);color:var(--text);box-sizing:border-box;}
 .sl-input:focus{outline:none;border-color:var(--accent);}
-.sl-doc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:7px;margin-bottom:8px;cursor:pointer;background:var(--bg);}
+.sl-doc-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:7px;margin-bottom:8px;cursor:pointer;background:var(--bg);max-width:100%;box-sizing:border-box;}
 .sl-doc-item.selected{border-color:var(--accent);background:var(--accent-light);}
 .sl-doc-item:hover{background:var(--bg3);}
 .sl-btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;margin-right:6px;}
 .sl-btn-email{background:#4f46e5;color:#fff;}
 .sl-btn-sms{background:#22c55e;color:#fff;}
 .sl-btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
-.sl-preview{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap;}
+.sl-preview{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
 /* ── Mobile Layout ──────────────────────────────────────────── */
 #hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--text);font-size:20px;line-height:1;flex-shrink:0;}
@@ -2141,8 +2141,8 @@ function renderSendLink(){
     var sel=(window._selDoc&&window._selDoc.id===d.id)?' selected':'';
     docList+='<div class="sl-doc-item'+sel+'" onclick="selectDoc(\''+d.id+'\')">';
     docList+='<span style="font-size:18px;">&#128196;</span>';
-    docList+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">'+h(d.label)+'</div>';
-    docList+='<div style="font-size:11px;color:var(--text3)">'+h(d.url)+'</div></div>';
+    docList+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);word-break:break-word">'+h(d.label)+'</div>';
+    docList+='<div style="font-size:11px;color:var(--text3);word-break:break-all;overflow-wrap:anywhere">'+h(d.url)+'</div></div>';
     docList+='<button onclick="event.stopPropagation();removeDoc('+i+')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px;line-height:1;">&#215;</button>';
     docList+='</div>';
   }
@@ -2160,7 +2160,7 @@ function renderSendLink(){
   prevHtml+='';
   prevHtml+='<button class="sl-btn sl-btn-secondary" onclick="clearSL()">Clear</button>';
   prevHtml+='</div></div>';
-  var html='<div style="max-width:700px">';
+  var html='<div style="max-width:700px;width:100%;box-sizing:border-box">';
   html+='<h2 style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)">Send a Link</h2>';
   html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email or SMS while they are still on the phone.</p>';
   var _slN=window._slName||'';var _slE=window._slEmail||'';var _slP=window._slPhone||'';
