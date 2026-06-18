@@ -1354,6 +1354,66 @@ function openSuggestHelp(pid){
   setTimeout(function(){var el=document.getElementById('sh-name');if(el)el.focus();},80);
 }
 
+function openKickOff(pid){
+  var p=gp(pid);if(!p)return;
+  var tasks=p.tasks||[];
+  // Gather unique assignee ids across all tasks in this project
+  var byMember={};
+  var order=[];
+  tasks.forEach(function(t){
+    var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
+    asgn.forEach(function(id){
+      if(!id)return;
+      if(!byMember[id]){byMember[id]=[];order.push(id);}
+      byMember[id].push(t.title);
+    });
+  });
+  // Build list of recipients who have an email
+  var recips=[];
+  var noEmail=[];
+  order.forEach(function(id){
+    var m=gm(id);
+    if(m&&m.email){recips.push(m.email);}
+    else if(m){noEmail.push(m.name);}
+  });
+  document.getElementById('modal-title').textContent='Kick Off — '+p.name;
+  if(!order.length){
+    document.getElementById('modal-body').innerHTML='<div style="font-size:13px;color:var(--text2);line-height:1.6">No one is assigned to any tasks on this project yet, so there\'s no one to kick off to. Assign team members to tasks first, then come back.</div>';
+    document.getElementById('modal-submit').textContent='Close';
+    document.getElementById('modal-submit').onclick=function(){closeModal();};
+    showModal();
+    return;
+  }
+  // Build editable kick-off message with per-person task breakdown
+  var breakdown='';
+  order.forEach(function(id){
+    var m=gm(id);
+    var first=m.name.split(' ')[0];
+    breakdown+=first+':\n';
+    byMember[id].forEach(function(tt){breakdown+='  • '+tt+'\n';});
+    breakdown+='\n';
+  });
+  var due=p.due?('\nTarget completion: '+p.due):'';
+  var defaultMsg='Hi team,\n\nWe\'re officially underway on "'+p.name+'"!'+due+'\n\nHere\'s what each of us is responsible for:\n\n'+breakdown+'Please review your tasks in ProjectOS and reach out if you have any questions. Let\'s do this.\n\nThanks,\nKevin';
+  var noEmailNote=noEmail.length?'<div style="font-size:11px;color:var(--orange);margin-bottom:10px">⚠️ No email on file for: '+h(noEmail.join(', '))+' — they won\'t be included. Add their email in Team Members.</div>':'';
+  document.getElementById('modal-body').innerHTML=
+    '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">This will open one email to everyone assigned a task on this project ('+recips.length+' '+(recips.length===1?'person':'people')+'). Edit the message below if you like, then send.</div>'+
+    noEmailNote+
+    '<div class="fr"><label class="fl">Recipients</label><div style="font-size:12px;color:var(--text2);background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;word-break:break-all">'+h(recips.join(', '))+'</div></div>'+
+    '<div class="fr"><label class="fl">Subject</label><input class="fi" id="ko-subject" value="'+h('🚀 We\'re underway: '+p.name)+'"></div>'+
+    '<div class="fr"><label class="fl">Message</label><textarea class="fta" id="ko-body" style="min-height:200px">'+h(defaultMsg)+'</textarea></div>';
+  document.getElementById('modal-submit').textContent='Open Kick Off Email';
+  document.getElementById('modal-submit').onclick=function(){
+    if(!recips.length){alert('No recipients have an email address. Add emails in Team Members first.');return;}
+    var subject=document.getElementById('ko-subject').value;
+    var body=document.getElementById('ko-body').value;
+    closeModal();
+    contactEmail(recips.join(','), '', subject, body);
+    toast('Opening kick-off email','ok');
+  };
+  showModal();
+}
+
 function editEntity(id){
   var e=DB.entities.find(function(x){return x.id===id;});if(!e)return;
   var colOpts=COLORS.map(function(c){
@@ -1438,6 +1498,7 @@ function renderDetail(p){
     '<div class="dp-title">'+h(p.name)+'</div>'+
     '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
     '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:#fff;background:var(--green);border-color:var(--green)" onclick="openKickOff(\''+p.id+'\')" title="Email everyone with a task on this project that we are underway">🚀 Kick Off</button>'+
     '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--accent);border-color:var(--accent)" onclick="openSuggestHelp(\''+p.id+'\')" title="Suggest someone who can help">🙋 Suggest Help</button>'+
     '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
     '<button class="dp-close" onclick="closeDetail()">✕</button>'+
