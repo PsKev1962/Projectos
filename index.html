@@ -410,8 +410,7 @@ a:visited{color:var(--accent);}
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// CONFIGURATION — paste your Google Apps Script URL here
-// after completing the one-time setup in the Squarespace view
+// CONFIGURATION — Supabase backend (project: The-Junction)
 // ═══════════════════════════════════════════════════════════
 var SUPABASE_URL = 'https://zybjazzlfahpriiwalnu.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5YmphenpsZmFocHJpaXdhbG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDA4NTksImV4cCI6MjA5NzIxNjg1OX0.XmyOArP-zPdlT3zHorsVGMZaldN45NlH5ZgtmSMHYfY';
@@ -723,7 +722,7 @@ function renderDash(){
   var m=ST.viewAs!=='all'?gm(ST.viewAs):null;
   var now=new Date();
   var html='<div class="page-header"><div><div class="page-title">'+(m?'Hi, '+h(m.name.split(' ')[0])+'':'Dashboard')+'</div>'+
-    '<div class="page-subtitle">Synced to Google Sheets — shared across all devices</div>'+
+    '<div class="page-subtitle">Synced to the cloud — shared across all devices</div>'+
     '</div><button class="tb-btn tb-btn-accent" onclick="openNewProject()">+ New Project</button></div>';
 
   if(m){
