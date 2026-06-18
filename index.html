@@ -1320,6 +1320,7 @@ function deleteMember(id){
 }
 
 var SUGGEST_HELP_TO='arossow@ourchurch.org.au';
+var PORTAL_URL='https://thejunctiongc.com/portal';
 function openSuggestHelp(pid){
   var p=gp(pid);if(!p)return;
   document.getElementById('modal-title').textContent='Suggest Help — '+p.name;
@@ -1393,7 +1394,8 @@ function openKickOff(pid){
     breakdown+='\n';
   });
   var due=p.due?('\nTarget completion: '+p.due):'';
-  var defaultMsg='Hi team,\n\nWe\'re officially underway on "'+p.name+'"!'+due+'\n\nHere\'s what each of us is responsible for:\n\n'+breakdown+'Please review your tasks in ProjectOS and reach out if you have any questions. Let\'s do this.\n\nThanks,\nKevin';
+  var portalLine='\n\nJump straight in here: '+PORTAL_URL;
+  var defaultMsg='Hi team,\n\nWe\'re officially underway on "'+p.name+'"!'+due+'\n\nHere\'s what each of us is responsible for:\n\n'+breakdown+'Please review your tasks in ProjectOS and reach out if you have any questions.'+portalLine+'\n\nLet\'s do this.\n\nThanks,\nKevin';
   var noEmailNote=noEmail.length?'<div style="font-size:11px;color:var(--orange);margin-bottom:10px">⚠️ No email on file for: '+h(noEmail.join(', '))+' — they won\'t be included. Add their email in Team Members.</div>':'';
   document.getElementById('modal-body').innerHTML=
     '<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">This will open one email to everyone assigned a task on this project ('+recips.length+' '+(recips.length===1?'person':'people')+'). Edit the message below if you like, then send.</div>'+
