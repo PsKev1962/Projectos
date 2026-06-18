@@ -475,22 +475,30 @@ function loadData(cb){
     sbFetch('entities?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('team_members?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('projects?select=*&order=created_at').then(function(r){return r.json();}),
-    sbFetch('tasks?select=*&order=created_at').then(function(r){return r.json();})
+    sbFetch('tasks?select=*&order=created_at').then(function(r){return r.json();}),
+    sbFetch('send_link_docs?select=*&order=created_at').then(function(r){return r.json();})
   ]).then(function(results){
     var entities = results[0];
     var members = results[1];
     var projects = results[2];
     var tasks = results[3];
+    var sldocs = results[4];
     if(!Array.isArray(entities)){entities=[];}
     if(!Array.isArray(members)){members=[];}
     if(!Array.isArray(projects)){projects=[];}
     if(!Array.isArray(tasks)){tasks=[];}
+    if(!Array.isArray(sldocs)){sldocs=[];}
+    var _sl = sldocs.map(function(d){
+      return {id:d.id, label:d.label||'', url:d.url||''};
+    });
     if(entities.length === 0){
       defaults();
+      DB.pdfDocs = _sl;
       setSS('ok','No data yet — add your first project');
       cb&&cb();
       return;
     }
+    DB.pdfDocs = _sl;
     // Rebuild DB structure from flat Supabase tables
     DB.entities = entities.map(function(e){
       return {id:e.id, name:e.name, color:e.color, short:e.short||e.name.substring(0,2).toUpperCase()};
@@ -504,7 +512,6 @@ function loadData(cb){
       });
       return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
     });
-    DB.pdfDocs = DB.pdfDocs||[];
     setSS('ok','Synced '+new Date().toLocaleTimeString());
     localSave();
     cb&&cb();
@@ -535,11 +542,15 @@ function saveData(cb){
       taskRows.push({id:t.id, title:t.title, description:t.desc||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], project_id:p.id, entity_id:p.entity||null});
     });
   });
+  var slDocRows = (DB.pdfDocs||[]).map(function(d){
+    return {id:d.id, label:d.label||'', url:d.url||''};
+  });
   var saves = [];
   if(entityRows.length) saves.push(sbFetch('entities?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(entityRows)}));
   if(memberRows.length) saves.push(sbFetch('team_members?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(memberRows)}));
   if(projectRows.length) saves.push(sbFetch('projects?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(projectRows)}));
   if(taskRows.length) saves.push(sbFetch('tasks?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(taskRows)}));
+  if(slDocRows.length) saves.push(sbFetch('send_link_docs?on_conflict=id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(slDocRows)}));
   Promise.all(saves).then(function(){
     setSS('ok','Saved '+new Date().toLocaleTimeString());
     if(cb) cb();
@@ -2169,8 +2180,12 @@ function addDoc(){
 
 function removeDoc(i){
   if(!confirm('Remove this document?'))return;
+  var doc=DB.pdfDocs[i];
   DB.pdfDocs.splice(i,1);
   window._selDoc=null;
+  if(doc&&doc.id){
+    sbFetch('send_link_docs?id=eq.'+encodeURIComponent(doc.id),{method:'DELETE'}).catch(function(err){console.error('send_link_docs delete error',err);});
+  }
   mutate();
   setView('sendlink');
 }
