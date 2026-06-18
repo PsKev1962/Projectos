@@ -1490,18 +1490,19 @@ function renderDetail(p){
   var e=ge(p.entity);
   var tasks=p.tasks||[];var dn=tasks.filter(function(t){return t.done;}).length;
   var pct=tasks.length?Math.round(dn/tasks.length*100):0;
-  var html='<div class="dp-hdr"><div>'+
+  var html='<div class="dp-hdr"><div style="flex:1;min-width:0">'+
     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
       '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+spill(p.status)+
     '</div>'+
     '<div class="dp-title">'+h(p.name)+'</div>'+
     '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
-    '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
-    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:#fff;background:var(--green);border-color:var(--green)" onclick="openKickOff(\''+p.id+'\')" title="Email everyone with a task on this project that we are underway">🚀 Kick Off</button>'+
-    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--accent);border-color:var(--accent)" onclick="openSuggestHelp(\''+p.id+'\')" title="Suggest someone who can help">🙋 Suggest Help</button>'+
-    '<button class="delbtn" style="font-size:11px;padding:3px 9px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
-    '<button class="dp-close" onclick="closeDetail()">✕</button>'+
-    '</div></div>'+
+    '<button class="dp-close" onclick="closeDetail()" style="flex-shrink:0">✕</button>'+
+    '</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;border-bottom:1px solid var(--border)">'+
+    '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:#fff;background:var(--green);border-color:var(--green)" onclick="openKickOff(\''+p.id+'\')" title="Email everyone with a task on this project that we are underway">🚀 Kick Off</button>'+
+    '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:var(--accent);border-color:var(--accent)" onclick="openSuggestHelp(\''+p.id+'\')" title="Suggest someone who can help">🙋 Suggest Help</button>'+
+    '<button class="delbtn" style="font-size:11px;padding:4px 10px;color:var(--red);border-color:var(--red)" onclick="delProj(\''+p.id+'\')" title="Delete project">🗑 Delete</button>'+
+    '</div>'+
     '<div class="dp-body">'+
     '<div class="dp-sec"><div class="dp-sec-title">Progress</div>'+
       '<div class="prog-lbl"><span>'+pct+'%</span><span>'+dn+'/'+tasks.length+' tasks</span></div>'+
