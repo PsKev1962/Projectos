@@ -1551,6 +1551,30 @@ function renderDetail(p){
       var remStr=(!t.done&&t.reminderDays!=null&&t.due)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">🔔 '+t.reminderDays+'d reminder</span>':'';
       var prog=t.progress||0;
       var pc=t.pri==='high'?'var(--red)':t.pri==='med'?'var(--orange)':'var(--green)';
+      var hasSub=t.subtasks&&t.subtasks.length>0;
+      var subDoneCount=hasSub?t.subtasks.filter(function(x){return x.done;}).length:0;
+      var allSubDone=hasSub&&subDoneCount===t.subtasks.length;
+      var completionRow;
+      if(!hasSub){
+        completionRow='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+          '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
+          '<span style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">Complete</span>'+
+        '</div>';
+      }else if(t.done){
+        completionRow='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+          '<div class="tck done" onclick="completeTaskFinal(\''+p.id+'\',\''+t.id+'\')">✓</div>'+
+          '<span style="font-size:12px;font-weight:600;color:var(--green);cursor:pointer" onclick="completeTaskFinal(\''+p.id+'\',\''+t.id+'\')">Signed off complete — click to reopen</span>'+
+        '</div>';
+      }else if(allSubDone){
+        completionRow='<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+          '<button class="btn btn-primary" style="width:100%;font-size:12px;padding:8px" onclick="completeTaskFinal(\''+p.id+'\',\''+t.id+'\')">✓ All sub-tasks done — Sign Off Final 10%</button>'+
+        '</div>';
+      }else{
+        completionRow='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text4)">'+
+          '<span class="tck" style="cursor:default;opacity:.5"></span>'+
+          '<span>'+subDoneCount+'/'+t.subtasks.length+' sub-tasks done — finish them all to sign off</span>'+
+        '</div>';
+      }
       return '<div class="task-card">'+
         '<div class="task-card-top">'+
           '<div class="task-card-body">'+
@@ -1582,17 +1606,7 @@ function renderDetail(p){
               '<span style="font-size:11px;color:var(--text4)">'+prog+'%</span>'+
             '</div>'+
             subtaskListHTML(p.id,t)+
-            (t.subtasks&&t.subtasks.length?
-              '<div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text4)">'+
-                '<span class="tck'+(t.done?' done':'')+'" style="cursor:default">'+(t.done?'✓':'')+'</span>'+
-                '<span>Auto-completes when all sub-tasks are done</span>'+
-              '</div>'
-            :
-              '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
-                '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
-                '<span style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">Complete</span>'+
-              '</div>'
-            )+
+            completionRow+
           '</div>'+
         '</div>'+
       taskProofHTML(p.id,t)+
@@ -1785,9 +1799,32 @@ function toggleTask(pid,tid){
 function recalcTaskProgress(t){
   if(t.subtasks&&t.subtasks.length){
     var dn=t.subtasks.filter(function(x){return x.done;}).length;
-    t.progress=Math.round(dn/t.subtasks.length*100);
-    t.done=(t.progress===100);
+    var allDone=dn===t.subtasks.length;
+    if(allDone){
+      if(!t.done)t.progress=90; // capped — awaiting manual sign-off on the final 10%
+    }else{
+      t.progress=Math.round(dn/t.subtasks.length*90);
+      t.done=false;
+    }
   }
+}
+
+function completeTaskFinal(pid,tid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
+  if(asgn.length&&ST.viewAs!=='all'&&asgn.indexOf(ST.viewAs)<0){
+    alert('Only someone assigned to this task can sign off on it. Select your name from the top-right dropdown if that\'s you.');
+    return;
+  }
+  if(t.done){
+    t.done=false;
+    recalcTaskProgress(t);
+  }else{
+    t.done=true;t.progress=100;
+  }
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast(t.done?'Task signed off as complete!':'Task reopened','ok');
 }
 
 function subtaskListHTML(pid,t){
