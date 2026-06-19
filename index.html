@@ -89,8 +89,8 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .av-row{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
 .proj-table{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.proj-thead{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 50px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);}
-.proj-row{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 50px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .12s;}
+.proj-thead{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 90px 50px;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);}
+.proj-row{display:grid;grid-template-columns:2fr 1fr 100px 80px 1fr 90px 90px 50px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .12s;}
 .proj-row:last-child{border-bottom:none;}
 .proj-row:hover{background:var(--bg3);}
 .pnm{font-size:13px;font-weight:600;color:var(--text);}
@@ -150,9 +150,6 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .task-row:hover{background:var(--bg3);}
 .at-row{flex-wrap:wrap;align-items:flex-start;padding:10px 14px;}
 .at-prog-row{display:flex;align-items:center;gap:6px;margin-top:6px;width:100%;}
-.at-prog-slider{-webkit-appearance:none;appearance:none;width:110px;height:4px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer;flex-shrink:0;}
-.at-prog-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);}
-.at-prog-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;}
 .at-prog-track{flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
 .at-prog-fill{height:100%;border-radius:2px;transition:width .15s,background .3s;}
 .at-prog-pct{font-size:10px;color:var(--text4);font-weight:600;min-width:28px;text-align:right;flex-shrink:0;}
@@ -270,8 +267,6 @@ a:visited{color:var(--accent);}
 .cbtn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .15s;white-space:nowrap;}
 .cbtn-email{background:#eef2ff;color:#4f46e5;}
 .cbtn-email:hover{background:#4f46e5;color:#fff;}
-.cbtn-sms{background:#f0fdf4;color:#16a34a;}
-.cbtn-sms:hover{background:#16a34a;color:#fff;}
 
 .sl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;max-width:100%;box-sizing:border-box;}
 .sl-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:block;}
@@ -282,7 +277,6 @@ a:visited{color:var(--accent);}
 .sl-doc-item:hover{background:var(--bg3);}
 .sl-btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:600;margin-right:6px;}
 .sl-btn-email{background:#4f46e5;color:#fff;}
-.sl-btn-sms{background:#22c55e;color:#fff;}
 .sl-btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
 .sl-preview{background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
@@ -847,16 +841,19 @@ function renderProjList(){
 
 function projTable(projs){
   if(!projs.length)return '<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects</div></div>';
-  var html='<div class="proj-table"><div class="proj-thead"><span>Project</span><span>Entity</span><span>Status</span><span>Priority</span><span>Lead</span><span>Progress</span><span></span></div>';
+  var html='<div class="proj-table"><div class="proj-thead"><span>Project</span><span>Entity</span><span>Status</span><span>Priority</span><span>Lead</span><span>Due Date</span><span>Progress</span><span></span></div>';
   projs.forEach(function(p){
     var e=ge(p.entity);var lm=gm(p.lead);
     var tt=p.tasks?p.tasks.length:0;var dn=p.tasks?p.tasks.filter(function(t){return t.done;}).length:0;
+    var dueColor=isOD(p)?'var(--red)':isDS(p)?'var(--orange)':'var(--text3)';
+    var dueLbl=p.due?p.due:'—';
     html+='<div class="proj-row" onclick="selectProj(\''+p.id+'\')">'+
-      '<div><div class="pnm">'+(isOD(p)?'🔴 ':isDS(p)?'🟡 ':'')+h(p.name)+'</div><div class="psub">'+dn+'/'+tt+' tasks'+(p.due?' · '+p.due:'')+'</div></div>'+
+      '<div><div class="pnm">'+(isOD(p)?'🔴 ':isDS(p)?'🟡 ':'')+h(p.name)+'</div><div class="psub">'+dn+'/'+tt+' tasks</div></div>'+
       '<div><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>'+
       '<div>'+spill(p.status)+'</div>'+
       '<div class="p'+p.priority+'">'+p.priority.toUpperCase()+'</div>'+
       '<div style="display:flex;align-items:center;gap:6px"><div class="av" style="background:'+lm.color+';width:22px;height:22px;font-size:8px">'+h(lm.initials)+'</div><span style="font-size:12px;color:var(--text2)">'+h(lm.name)+'</span></div>'+
+      '<div style="font-size:12px;font-weight:600;color:'+dueColor+'">'+h(dueLbl)+'</div>'+
       '<div class="pw"><div class="pb"><div class="pbf" style="width:'+projPct(p)+'%"></div></div><span class="ppc">'+projPct(p)+'%</span></div>'+
       '<div class="row-acts"><button class="delbtn" onclick="event.stopPropagation();delProj(\''+p.id+'\')" title="Delete">✕</button></div></div>';
   });
@@ -1211,11 +1208,7 @@ function renderTasks(){
           '<span style="font-size:10px;color:var(--text4)">'+h(p.name)+'</span>'+
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
         '</div>'+
-        '<div class="at-prog-row" onclick="event.stopPropagation()">'+
-          '<input class="at-prog-slider" type="range" min="0" max="100" value="'+prog+'"'+
-            ' data-pid="'+p.id+'" data-tid="'+t.id+'"'+
-            ' oninput="var f=document.getElementById(\'tpf-'+t.id+'\');if(f)f.style.width=this.value+\'%\';var s=document.getElementById(\'tpp-'+t.id+'\');if(s)s.textContent=this.value+\'%\'"'+
-            ' onchange="updateTaskProgInline(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'),this.value)">'+
+        '<div class="at-prog-row">'+
           '<div class="at-prog-track"><div class="at-prog-fill" id="tpf-'+t.id+'" style="width:'+prog+'%;background:'+progColor+'"></div></div>'+
           '<span class="at-prog-pct" id="tpp-'+t.id+'">'+prog+'%</span>'+
         '</div>'+
@@ -1300,7 +1293,7 @@ function editMember(id){
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" value="'+h(m.name)+'"></div>'+
     '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" value="'+h(m.email)+'"></div>'+
-    '<div class="fr"><label class="fl">Phone (for SMS)</label><input class="fi" id="nm-ph" placeholder="+61412345678" value="'+(m.phone?h(m.phone):'')+'"></div>'+
+    '<div class="fr"><label class="fl">Phone Number</label><input class="fi" id="nm-ph" placeholder="+61412345678" value="'+(m.phone?h(m.phone):'')+'"></div>'+
     '<div class="fr"><label class="fl">Entities</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+colOpts+'</div></div>';
@@ -1498,7 +1491,16 @@ function selectProj(id){
 function renderDetail(p){
   var dp=document.getElementById('detail-panel');if(!dp)return;
   var e=ge(p.entity);
-  var tasks=p.tasks||[];var dn=tasks.filter(function(t){return t.done;}).length;
+  var tasks=(p.tasks||[]).slice().sort(function(a,b){
+    if(a.done!==b.done)return a.done?1:-1;
+    var da=a.due?new Date(a.due):null;
+    var db=b.due?new Date(b.due):null;
+    if(!da&&!db)return 0;
+    if(!da)return 1;
+    if(!db)return -1;
+    return da-db;
+  });
+  var dn=tasks.filter(function(t){return t.done;}).length;
   var pct=tasks.length?Math.round(dn/tasks.length*100):0;
   var html='<div class="dp-hdr"><div style="flex:1;min-width:0">'+
     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
@@ -1577,8 +1579,7 @@ function renderDetail(p){
             '</div>'+
             '<div class="task-prog-wrap">'+
               '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
-              '<input class="task-prog-input" type="number" min="0" max="100" value="'+prog+'" onchange="updateTaskProg(\''+p.id+'\',\''+t.id+'\',this.value)" title="% complete">'+
-              '<span style="font-size:11px;color:var(--text4)">%</span>'+
+              '<span style="font-size:11px;color:var(--text4)">'+prog+'%</span>'+
             '</div>'+
           '</div>'+
         '</div>'+
@@ -1648,35 +1649,6 @@ function importData(){
   };
   inp.click();
   setTimeout(function(){ if(inp.parentNode) inp.parentNode.removeChild(inp); }, 30000);
-}
-
-function updateTaskProg(pid,tid,val){
-  var p=gp(pid);if(!p||!p.tasks)return;
-  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
-  t.progress=Math.min(100,Math.max(0,parseInt(val)||0));
-  if(t.progress===100)t.done=true;
-  var fill=document.getElementById('tpf-'+tid);if(fill)fill.style.width=t.progress+'%';
-  var dn=p.tasks.filter(function(x){return x.done||(x.progress||0)===100;}).length;
-  p.progress=p.tasks.length?Math.round(p.tasks.reduce(function(s,x){return s+(x.progress||0);},0)/p.tasks.length):0;
-  mutate();
-}
-
-function updateTaskProgInline(pid,tid,val){
-  var p=gp(pid);if(!p||!p.tasks)return;
-  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
-  var v=Math.min(100,Math.max(0,parseInt(val)||0));
-  t.progress=v;
-  if(v===100){t.done=true;}
-  var fill=document.getElementById('tpf-'+tid);if(fill){fill.style.width=v+'%';fill.style.background=v===100?'var(--green)':v>=50?'var(--blue)':'var(--accent)';}
-  var pct=document.getElementById('tpp-'+tid);if(pct)pct.textContent=v+'%';
-  p.progress=p.tasks.length?Math.round(p.tasks.reduce(function(s,x){return s+(x.progress||0);},0)/p.tasks.length):0;
-  mutate();
-  if(v===100){
-    toast('✓ Task marked complete!','ok');
-    setTimeout(function(){if(ST.view==='tasks')renderAll();},400);
-  } else {
-    toast('Progress updated to '+v+'%','ok');
-  }
 }
 
 function taskProofHTML(pid, t){
@@ -2024,7 +1996,7 @@ function openNewMember(){
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Full Name *</label><input class="fi" id="nm-nm" placeholder="e.g. Sam Jones"></div>'+
     '<div class="fr"><label class="fl">Email</label><input class="fi" id="nm-em" type="email" placeholder="sam@company.com"></div>'+
-    '<div class="fr"><label class="fl">Phone (for SMS)</label><input class="fi" id="nm-ph" placeholder="e.g. +61412345678"></div>'+
+    '<div class="fr"><label class="fl">Phone Number</label><input class="fi" id="nm-ph" placeholder="e.g. +61412345678"></div>'+
     '<div class="fr"><label class="fl">Entities (select all that apply)</label>'+
       '<div style="border:1px solid var(--border2);border-radius:6px;padding:8px 12px;background:var(--bg);max-height:160px;overflow-y:auto">'+eoCBs+'</div></div>'+
     '<div class="fr"><label class="fl">Colour</label><div class="color-opts" id="cop">'+
@@ -2108,30 +2080,6 @@ function contactEmail(email, name, subject, body){
   }
 }
 
-function copySMSToClipboard(phone, body){
-  var text = 'To: '+phone+'\n\n'+(body||'');
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(function(){
-      alert('Phone number and message copied to clipboard:\n\n'+text);
-    }, function(){
-      alert('Copy this number and message:\n\n'+text);
-    });
-  } else {
-    alert('Copy this number and message:\n\n'+text);
-  }
-}
-
-function contactSMS(phone, body){
-  if(!phone){alert('No phone number saved for this person.');return;}
-  if(isMobile()){
-    var encoded = encodeURIComponent(body||'');
-    location.href='sms:'+phone+'?body='+encoded;
-  } else {
-    copySMSToClipboard(phone, body);
-  }
-}
-
-
 function openCLink(btn){
   var url=decodeURIComponent(btn.getAttribute('data-url')||'');
   if(!url)return;
@@ -2149,15 +2097,6 @@ function openCLink(btn){
       });
       window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+to+'&su='+sub+'&body='+bod,'_blank');
     }
-  } else if(url.indexOf('sms:')===0){
-    if(isMobile()){
-      location.href=url;
-    } else {
-      var smsParts=url.replace('sms:','').split('?body=');
-      var smsPhone=smsParts[0];
-      var smsBody=smsParts[1]?decodeURIComponent(smsParts[1]):'';
-      copySMSToClipboard(smsPhone, smsBody);
-    }
   } else {
     window.open(url,'_blank');
   }
@@ -2170,16 +2109,12 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
     ? 'Hi '+m.name.split(' ')[0]+',\n\nJust following up on your task: '+taskTitle+'\nProject: '+projName+docPart+'\n\n'
     : 'Hi '+m.name.split(' ')[0]+',\n\n';
   var _emailUrl = m.email ? 'mailto:'+m.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body) : '';
-  var _smsUrl = m.phone ? 'sms:'+m.phone.replace(/[^0-9+]/g,'')+'?body='+encodeURIComponent(body) : '';
 
   var emailBtn = m.email
     ? '<button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">&#9993; Email</button>'
     : '<span class="cbtn cbtn-email" style="opacity:.4;cursor:default" title="Add email to enable">&#9993; Email</span>';
-  var smsBtn = m.phone
-    ? '<button class="cbtn cbtn-sms" onclick="openCLink(this)" data-url="'+encodeURIComponent(_smsUrl)+'">&#128172; SMS</button>'
-    : '<span class="cbtn cbtn-sms" style="opacity:.4;cursor:default" title="Add phone number to enable SMS">&#128172; SMS</span>';
 
-  return '<div class="contact-btns">'+emailBtn+smsBtn+'</div>';
+  return '<div class="contact-btns">'+emailBtn+'</div>';
 }
 
 // Always load from Supabase on startup — never trust localStorage as primary
@@ -2212,21 +2147,19 @@ function renderSendLink(){
   }
   prevHtml+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">';
   prevHtml+='<button class="sl-btn sl-btn-email" onclick="sendSLEmail()">&#9993; Send Email</button>';
-  prevHtml+='<button class="sl-btn sl-btn-sms" onclick="sendSLSMS()">&#128172; SMS</button><span style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px;">(Press Enter to send)</span>';
   prevHtml+='';
   prevHtml+='<button class="sl-btn sl-btn-secondary" onclick="clearSL()">Clear</button>';
   prevHtml+='</div></div>';
   var html='<div style="max-width:700px;width:100%;box-sizing:border-box">';
   html+='<h2 style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text)">Send a Link</h2>';
-  html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email or SMS while they are still on the phone.</p>';
-  var _slN=window._slName||'';var _slE=window._slEmail||'';var _slP=window._slPhone||'';
+  html+='<p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Send a document link to a contact via email while they are still on the phone.</p>';
+  var _slN=window._slName||'';var _slE=window._slEmail||'';
   var _slOdL=window._slOdLabel||'';var _slOdU=window._slOdUrl||'';
   html+='<div class="sl-card"><span class="sl-label">Recipient Details</span>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">';
   html+='<div><label class="sl-label">First Name</label><input class="sl-input" id="sl-name" placeholder="e.g. Sarah" value="'+h(_slN)+'" oninput="refreshSLPreview()" /></div>';
   html+='<div><label class="sl-label">Email Address</label><input class="sl-input" id="sl-email" placeholder="sarah@example.com" value="'+h(_slE)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
-  html+='<div><label class="sl-label">Phone Number (SMS)</label><input class="sl-input" id="sl-phone" placeholder="e.g. 0412 345 678" value="'+h(_slP)+'" oninput="refreshSLPreview()" /></div>';
   html+='</div>';
   html+='<div class="sl-card"><span class="sl-label">Once-off Document / Link (optional)</span>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
@@ -2271,12 +2204,10 @@ function buildSLPreview(){
 function refreshSLPreview(){
   var nameEl=document.getElementById('sl-name');
   var emailEl=document.getElementById('sl-email');
-  var phoneEl=document.getElementById('sl-phone');
   var odLabelEl=document.getElementById('sl-onceoff-label');
   var odUrlEl=document.getElementById('sl-onceoff-url');
   if(nameEl)window._slName=nameEl.value;
   if(emailEl)window._slEmail=emailEl.value;
-  if(phoneEl)window._slPhone=phoneEl.value;
   if(odLabelEl)window._slOdLabel=odLabelEl.value;
   if(odUrlEl)window._slOdUrl=odUrlEl.value;
   var prev=document.getElementById('sl-preview-text');
@@ -2309,9 +2240,9 @@ function removeDoc(i){
 
 function clearSL(){
   window._selDoc=null;
-  window._slName='';window._slEmail='';window._slPhone='';
+  window._slName='';window._slEmail='';
   window._slOdLabel='';window._slOdUrl='';
-  var ids=['sl-name','sl-email','sl-phone','sl-onceoff-label','sl-onceoff-url'];
+  var ids=['sl-name','sl-email','sl-onceoff-label','sl-onceoff-url'];
   for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)el.value='';}
   var prev=document.getElementById('sl-preview-text');
   if(prev)prev.textContent='Fill in recipient details and select a document above to preview the message.';
@@ -2322,10 +2253,8 @@ function clearSL(){
 function getSLFields(){
   refreshSLPreview();
   var emailEl=document.getElementById('sl-email');
-  var phoneEl=document.getElementById('sl-phone');
   return {
-    email:(emailEl?emailEl.value.trim():'')|| (window._slEmail||''),
-    phone:(phoneEl?phoneEl.value.trim():'')|| (window._slPhone||'')
+    email:(emailEl?emailEl.value.trim():'')|| (window._slEmail||'')
   };
 }
 
@@ -2343,17 +2272,6 @@ function sendSLEmail(){
   }
 }
 
-function sendSLSMS(){
-  var f=getSLFields();
-  if(!f.phone){alert('Please enter a phone number.');return;}
-  var body=buildSLPreview();
-  if(!body){alert('Please select a document or enter a once-off document link first.');return;}
-  if(isMobile()){
-    location.href='sms:'+f.phone+'?body='+encodeURIComponent(body);
-  } else {
-    copySMSToClipboard(f.phone, body);
-  }
-}
 
 
 </script>
