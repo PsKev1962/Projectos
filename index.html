@@ -1492,7 +1492,9 @@ function renderDetail(p){
   var dp=document.getElementById('detail-panel');if(!dp)return;
   var e=ge(p.entity);
   var tasks=(p.tasks||[]).slice().sort(function(a,b){
-    if(a.done!==b.done)return a.done?1:-1;
+    var aSink=(a.subtasks&&a.subtasks.length)?false:a.done;
+    var bSink=(b.subtasks&&b.subtasks.length)?false:b.done;
+    if(aSink!==bSink)return aSink?1:-1;
     var da=a.due?new Date(a.due):null;
     var db=b.due?new Date(b.due):null;
     if(!da&&!db)return 0;
@@ -1850,6 +1852,8 @@ function assignSubtask(pid,tid,stid,val){
 function deleteSubtask(pid,tid,stid){
   var p=gp(pid);if(!p||!p.tasks)return;
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return;
+  if(!p.lead){alert('This project has no Project Lead assigned, so removing sub-tasks is locked. Set a Project Lead first.');return;}
+  if(ST.viewAs!==p.lead){alert('Only the Project Lead ('+gm(p.lead).name+') can remove sub-tasks. Select your name from the top-right dropdown if that\'s you.');return;}
   if(!confirm('Remove this sub-task?'))return;
   t.subtasks=t.subtasks.filter(function(x){return x.id!==stid;});
   recalcTaskProgress(t);
@@ -2071,6 +2075,8 @@ function openEditTask(pid,tid){
 function deleteTask(pid,tid){
   var p=gp(pid);if(!p)return;
   var t=p.tasks&&p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  if(!p.lead){alert('This project has no Project Lead assigned, so deleting tasks is locked. Set a Project Lead first.');return;}
+  if(ST.viewAs!==p.lead){alert('Only the Project Lead ('+gm(p.lead).name+') can delete tasks. Select your name from the top-right dropdown if that\'s you.');return;}
   if(!confirm('Delete task "'+t.title+'"? This cannot be undone.'))return;
   p.tasks=p.tasks.filter(function(x){return x.id!==tid;});
   if(ST.project===pid)renderDetail(p);
