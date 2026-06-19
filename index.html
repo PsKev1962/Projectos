@@ -1490,6 +1490,8 @@ function selectProj(id){
 
 function renderDetail(p){
   var dp=document.getElementById('detail-panel');if(!dp)return;
+  var prevBody=dp.querySelector('.dp-body');
+  var prevScroll=prevBody?prevBody.scrollTop:0;
   var e=ge(p.entity);
   var tasks=(p.tasks||[]).slice().sort(function(a,b){
     var aSink=(a.subtasks&&a.subtasks.length)?false:a.done;
@@ -1624,6 +1626,8 @@ function renderDetail(p){
     '<textarea class="note-area" id="note-ta-'+p.id+'" placeholder="Add a note..."></textarea>'+
     '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;margin-top:6px" onclick="addNote(\''+p.id+'\')">Add Note</button></div></div>';
   dp.innerHTML=html;
+  var newBody=dp.querySelector('.dp-body');
+  if(newBody)newBody.scrollTop=prevScroll;
 }
 
 function exportData(){
