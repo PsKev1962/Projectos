@@ -1551,9 +1551,6 @@ function renderDetail(p){
       var pc=t.pri==='high'?'var(--red)':t.pri==='med'?'var(--orange)':'var(--green)';
       return '<div class="task-card">'+
         '<div class="task-card-top">'+
-          '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+
-          (t.done?'✓':'')+
-          '</div>'+
           '<div class="task-card-body">'+
             '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:2px">'+
               '<div class="task-card-title'+(t.done?' done':'')+'">'+h(t.title)+'</div>'+
@@ -1580,6 +1577,10 @@ function renderDetail(p){
             '<div class="task-prog-wrap">'+
               '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
               '<span style="font-size:11px;color:var(--text4)">'+prog+'%</span>'+
+            '</div>'+
+            '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+              '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
+              '<span style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">Complete</span>'+
             '</div>'+
           '</div>'+
         '</div>'+
