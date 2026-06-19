@@ -1640,7 +1640,7 @@ function renderDetail(p){
                 ((!asgn.length&&t.assignNote)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">Suggested: '+h(t.assignNote)+'</span>':'')+
               '</div>'+
               (t.docUrl?'<div style="margin:4px 0 6px"><a href="'+h(t.docUrl)+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">&#128196; '+h(t.docLabel||'View Document')+'</a></div>':'')+
-              asgn.map(function(id){return memberContactBtns(gm(id),t.title,p.name,t.docUrl,t.docLabel);}).join('')+
+              taskEmailAllBtn(asgn,t.title,p.name,t.docUrl,t.docLabel)+
             '</div>'+
             '<div class="task-prog-wrap">'+
               '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
@@ -2339,6 +2339,24 @@ function memberContactBtns(m, taskTitle, projName, docLink, docLabel){
     : '<span class="cbtn cbtn-email" style="opacity:.4;cursor:default" title="Add email to enable">&#9993; Email</span>';
 
   return '<div class="contact-btns">'+emailBtn+'</div>';
+}
+
+function taskEmailAllBtn(asgnIds,taskTitle,projName,docLink,docLabel){
+  var members=(asgnIds||[]).map(function(id){return gm(id);}).filter(function(m){return m&&m.email;});
+  if(!members.length){
+    return '<div class="contact-btns"><span class="cbtn cbtn-email" style="opacity:.4;cursor:default" title="Add an assignee with an email to enable">&#9993; Email</span></div>';
+  }
+  var emails=members.map(function(m){return m.email;}).join(',');
+  var firstNames=members.map(function(m){return m.name.split(' ')[0];});
+  var greeting=firstNames.length>1?('Hi '+firstNames.slice(0,-1).join(', ')+' and '+firstNames[firstNames.length-1]+','):('Hi '+firstNames[0]+',');
+  var subject=taskTitle?'Re: '+taskTitle+' ('+projName+')':'ProjectOS Update';
+  var docPart=(docLink)?'\n\nDocument: '+(docLabel||'Link')+'\n'+docLink:'';
+  var body=taskTitle
+    ?greeting+'\n\nJust following up on your task: '+taskTitle+'\nProject: '+projName+docPart+'\n\n'
+    :greeting+'\n\n';
+  var _emailUrl='mailto:'+emails+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  var label=members.length>1?('&#9993; Email All ('+members.length+')'):'&#9993; Email';
+  return '<div class="contact-btns"><button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">'+label+'</button></div>';
 }
 
 // Always load from Supabase on startup — never trust localStorage as primary
