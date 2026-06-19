@@ -1765,12 +1765,18 @@ function taskCommentsHTML(pid, t){
   var comments=t.comments||[];
   var html='<div class="task-comments">';
   if(comments.length){
-    html+=comments.map(function(c){
+    html+=comments.map(function(c,i){
       var who = c.who||c.author||'';
       var when = c.when||c.date||'';
       return '<div class="task-comment">'+
-        '<span class="task-comment-who">'+h(who)+'</span>'+
-        '<span class="task-comment-when">'+h(when)+'</span>'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">'+
+          '<div><span class="task-comment-who">'+h(who)+'</span>'+
+          '<span class="task-comment-when">'+h(when)+(c.edited?' &middot; edited':'')+'</span></div>'+
+          '<div style="display:flex;gap:4px;flex-shrink:0">'+
+            '<button class="proof-del" style="font-size:10px" onclick="editTaskComment(\''+pid+'\',\''+t.id+'\','+i+')" title="Edit comment">&#9998;</button>'+
+            '<button class="proof-del" style="font-size:10px" onclick="deleteTaskComment(\''+pid+'\',\''+t.id+'\','+i+')" title="Delete comment">&#10005;</button>'+
+          '</div>'+
+        '</div>'+
         '<div class="task-comment-text">'+h(c.text)+'</div>'+
         '</div>';
     }).join('');
@@ -1782,6 +1788,37 @@ function taskCommentsHTML(pid, t){
     '</div>'+
     '</div>';
   return html;
+}
+
+function editTaskComment(pid,tid,idx){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.comments)return;
+  var c=t.comments[idx];if(!c)return;
+  if(ST.viewAs==='all'){alert('Select your name from the top-right dropdown to edit your comment.');return;}
+  var meName=gm(ST.viewAs).name;
+  if(c.who!==meName){alert('You can only edit your own comments.');return;}
+  var newText=prompt('Edit comment:',c.text);
+  if(newText===null)return;
+  newText=newText.trim();
+  if(!newText){alert('Comment cannot be empty.');return;}
+  c.text=newText;
+  c.edited=true;
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast('Comment updated','ok');
+}
+
+function deleteTaskComment(pid,tid,idx){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.comments)return;
+  var c=t.comments[idx];if(!c)return;
+  var meName=ST.viewAs!=='all'?gm(ST.viewAs).name:null;
+  var isOwn=meName&&c.who===meName;
+  var isLead=p.lead&&ST.viewAs===p.lead;
+  if(!isOwn&&!isLead){alert('You can only delete your own comments'+(p.lead?' — or the Project Lead ('+gm(p.lead).name+') can remove any comment.':'.'));return;}
+  if(!confirm('Delete this comment?'))return;
+  t.comments.splice(idx,1);
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast('Comment deleted','ok');
 }
 
 function addTaskComment(pid, tid){
