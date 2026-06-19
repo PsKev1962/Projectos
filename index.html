@@ -508,7 +508,7 @@ function loadData(cb){
     });
     DB.projects = projects.map(function(p){
       var ptasks = tasks.filter(function(t){return t.project_id===p.id;}).map(function(t){
-        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||''};
+        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', subtasks:t.subtasks||[]};
       });
       return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
     });
@@ -539,7 +539,7 @@ function saveData(cb){
   DB.projects.forEach(function(p){
     projectRows.push({id:p.id, name:p.name, description:p.desc||'', status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due_date:p.due||null, lead:p.lead||null, members:p.members||[], notes:p.notes||[], docs:p.docs||[], entity_id:p.entity||null});
     (p.tasks||[]).forEach(function(t){
-      taskRows.push({id:t.id, title:t.title, description:t.desc||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], project_id:p.id, entity_id:p.entity||null});
+      taskRows.push({id:t.id, title:t.title, description:t.desc||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], project_id:p.id, entity_id:p.entity||null});
     });
   });
   var slDocRows = (DB.pdfDocs||[]).map(function(d){
@@ -1559,6 +1559,7 @@ function renderDetail(p){
                 '<button class="delbtn" onclick="event.stopPropagation();deleteTask(\''+p.id+'\',\''+t.id+'\')" title="Delete task" style="font-size:11px;padding:2px 7px;color:var(--red);border-color:var(--red)">&#10005; Delete</button>'+
               '</div>'+
             '</div>'+
+            (t.desc?'<div style="font-size:12px;color:var(--text3);margin:-2px 0 6px;line-height:1.4">'+h(t.desc)+'</div>':'')+
             '<div class="task-card-meta">'+
               (t.cat?'<span class="tcat">'+h(t.cat)+'</span>':'')+
               '<span style="font-size:10px;font-weight:700;color:'+pc+'">'+t.pri.toUpperCase()+'</span>'+
@@ -1578,10 +1579,18 @@ function renderDetail(p){
               '<div class="task-prog-track"><div class="task-prog-fill" style="width:'+prog+'%"></div></div>'+
               '<span style="font-size:11px;color:var(--text4)">'+prog+'%</span>'+
             '</div>'+
-            '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
-              '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
-              '<span style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">Complete</span>'+
-            '</div>'+
+            subtaskListHTML(p.id,t)+
+            (t.subtasks&&t.subtasks.length?
+              '<div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text4)">'+
+                '<span class="tck'+(t.done?' done':'')+'" style="cursor:default">'+(t.done?'✓':'')+'</span>'+
+                '<span>Auto-completes when all sub-tasks are done</span>'+
+              '</div>'
+            :
+              '<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+                '<div class="tck'+(t.done?' done':'')+'" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">'+(t.done?'✓':'')+'</div>'+
+                '<span style="font-size:12px;font-weight:600;color:var(--text2);cursor:pointer" onclick="toggleTask(\''+p.id+'\',\''+t.id+'\')">Complete</span>'+
+              '</div>'
+            )+
           '</div>'+
         '</div>'+
       taskProofHTML(p.id,t)+
@@ -1771,6 +1780,84 @@ function toggleTask(pid,tid){
   mutate();
 }
 
+function recalcTaskProgress(t){
+  if(t.subtasks&&t.subtasks.length){
+    var dn=t.subtasks.filter(function(x){return x.done;}).length;
+    t.progress=Math.round(dn/t.subtasks.length*100);
+    t.done=(t.progress===100);
+  }
+}
+
+function subtaskListHTML(pid,t){
+  var subs=t.subtasks||[];
+  var html='<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">'+
+    '<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);margin-bottom:6px">Sub-tasks'+(subs.length?' ('+subs.filter(function(x){return x.done;}).length+'/'+subs.length+')':'')+'</div>';
+  if(subs.length){
+    html+=subs.map(function(st){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">'+
+        '<div class="tck'+(st.done?' done':'')+'" style="width:14px;height:14px" onclick="toggleSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')">'+(st.done?'✓':'')+'</div>'+
+        '<span style="flex:1;font-size:12px;color:'+(st.done?'var(--text4)':'var(--text2)')+';text-decoration:'+(st.done?'line-through':'none')+'">'+h(st.title)+'</span>'+
+        '<select class="fs" style="font-size:11px;padding:2px 6px;width:auto;max-width:110px" onchange="assignSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\',this.value)">'+
+          '<option value=""'+(!st.assign?' selected':'')+'>Unassigned</option>'+
+          DB.members.map(function(mm){return '<option value="'+mm.id+'"'+(st.assign===mm.id?' selected':'')+'>'+h(mm.name)+'</option>';}).join('')+
+        '</select>'+
+        '<button class="proof-del" onclick="deleteSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')" title="Remove">&#10005;</button>'+
+      '</div>';
+    }).join('');
+  }
+  html+='<div style="display:flex;gap:6px;margin-top:6px">'+
+    '<input class="fi" id="st-title-'+t.id+'" placeholder="Add a sub-task..." style="font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addSubtask(\''+pid+'\',\''+t.id+'\')}">'+
+    '<select class="fs" id="st-assign-'+t.id+'" style="font-size:12px;padding:6px 8px;max-width:130px">'+
+      '<option value="">Unassigned</option>'+
+      DB.members.map(function(mm){return '<option value="'+mm.id+'">'+h(mm.name)+'</option>';}).join('')+
+    '</select>'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 12px;flex-shrink:0" onclick="addSubtask(\''+pid+'\',\''+t.id+'\')">+ Add</button>'+
+  '</div></div>';
+  return html;
+}
+
+function addSubtask(pid,tid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var titleEl=document.getElementById('st-title-'+tid);
+  var assignEl=document.getElementById('st-assign-'+tid);
+  if(!titleEl||!titleEl.value.trim())return;
+  if(!t.subtasks)t.subtasks=[];
+  t.subtasks.push({id:uid(),title:titleEl.value.trim(),assign:assignEl?assignEl.value:'',done:false});
+  recalcTaskProgress(t);
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast('Sub-task added','ok');
+}
+
+function toggleSubtask(pid,tid,stid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return;
+  var st=t.subtasks.find(function(x){return x.id===stid;});if(!st)return;
+  st.done=!st.done;
+  recalcTaskProgress(t);
+  if(ST.project===pid)renderDetail(p);
+  mutate();
+}
+
+function assignSubtask(pid,tid,stid,val){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return;
+  var st=t.subtasks.find(function(x){return x.id===stid;});if(!st)return;
+  st.assign=val;
+  mutate();toast('Sub-task assigned','ok');
+}
+
+function deleteSubtask(pid,tid,stid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return;
+  if(!confirm('Remove this sub-task?'))return;
+  t.subtasks=t.subtasks.filter(function(x){return x.id!==stid;});
+  recalcTaskProgress(t);
+  if(ST.project===pid)renderDetail(p);
+  mutate();toast('Sub-task removed','ok');
+}
+
+
 function updateStatus(pid,val){var p=gp(pid);if(!p)return;p.status=val;mutate();}
 function updateProjEntity(pid,val){var p=gp(pid);if(!p)return;p.entity=val;mutate();renderAll();toast('Project moved to '+ge(val).name,'ok');}
 function updateProjLead(pid,val){var p=gp(pid);if(!p)return;p.lead=val||null;mutate();renderAll();if(ST.project===pid)renderDetail(p);toast(val?('Lead set to '+gm(val).name):'Lead cleared','ok');}
@@ -1868,6 +1955,7 @@ function openAddTask(pid){
   document.getElementById('modal-title').textContent='Add Task';
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="nt-title" placeholder="e.g. Write homepage copy"></div>'+
+    '<div class="fr"><label class="fl">Context / Sub-heading</label><input class="fi" id="nt-subhead" placeholder="e.g. Needed before Friday client call"></div>'+
     '<div class="fr2">'+
       '<div><label class="fl">Category</label><input class="fi" id="nt-cat" placeholder="e.g. Design"></div>'+
       '<div><label class="fl">Priority</label><select class="fs" id="nt-pri"><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select></div>'+
@@ -1897,6 +1985,7 @@ function openAddTask(pid){
     p.tasks.push({
       id:uid(),
       title:title,
+      desc:document.getElementById('nt-subhead').value.trim(),
       cat:document.getElementById('nt-cat').value.trim(),
       pri:document.getElementById('nt-pri').value,
       due:document.getElementById('nt-due').value||null,
@@ -1907,7 +1996,8 @@ function openAddTask(pid){
       docUrl:document.getElementById('nt-doc-url').value.trim(),
       done:false,
       progress:0,
-      assignees:assignees
+      assignees:assignees,
+      subtasks:[]
     });
     closeModal();if(ST.project===pid)renderDetail(p);mutate();toast('Task added & saved','ok');
 
@@ -1930,6 +2020,7 @@ function openEditTask(pid,tid){
   document.getElementById('modal-title').textContent='Edit Task';
   document.getElementById('modal-body').innerHTML=
     '<div class="fr"><label class="fl">Task Title *</label><input class="fi" id="et-title" value="'+h(t.title)+'"></div>'+
+    '<div class="fr"><label class="fl">Context / Sub-heading</label><input class="fi" id="et-subhead" placeholder="e.g. Needed before Friday client call" value="'+h(t.desc||'')+'"></div>'+
     '<div class="fr2">'+
       '<div><label class="fl">Category</label><input class="fi" id="et-cat" value="'+h(t.cat||'')+'"></div>'+
       '<div><label class="fl">Priority</label><select class="fs" id="et-pri">'+
@@ -1958,6 +2049,7 @@ function openEditTask(pid,tid){
     var cbs=document.querySelectorAll('.et-assign-cb:checked');
     var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
     t.title=title;
+    t.desc=document.getElementById('et-subhead').value.trim();
     t.cat=document.getElementById('et-cat').value.trim();
     t.pri=document.getElementById('et-pri').value;
     t.due=document.getElementById('et-due').value||null;
