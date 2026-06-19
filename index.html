@@ -938,7 +938,8 @@ function renderKanban(){
       html+='<div class="kcard" draggable="true"'+
         ' data-pid="'+p.id+'" data-tid="'+t.id+'"'+
         ' ondragstart="kbDragStart(this)"'+
-        ' ondragend="kbDragEnd(this)">'+
+        ' ondragend="kbDragEnd(this)"'+
+        ' onclick="selectProj(\''+p.id+'\')">'+
         '<div class="kcard-title">'+h(t.title)+'</div>'+
         '<div class="kcard-meta">'+
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
