@@ -509,7 +509,7 @@ function loadData(cb){
   Promise.all([
     sbFetch('entities?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('team_members?select=*&order=created_at').then(function(r){return r.json();}),
-    sbFetch('projects?select=*&order=created_at').then(function(r){return r.json();}),
+    sbFetch('projects?select=*&order=created_at.desc').then(function(r){return r.json();}),
     sbFetch('tasks?select=*&order=created_at').then(function(r){return r.json();}),
     sbFetch('send_link_docs?select=*&order=created_at').then(function(r){return r.json();})
   ]).then(function(results){
@@ -1701,7 +1701,7 @@ function importData(){
           var existing=DB.projects.find(function(p){return p.id===proj.id;});
           if(existing){alert('This project has already been imported.');return;}
           if(!confirm('Add project "'+proj.name+'" to ProjectOS? This will NOT affect your existing projects — it will be added alongside them.')){return;}
-          DB.projects.push(proj);
+          DB.projects.unshift(proj);
           mutate();
           renderAll();
           toast('Project "'+proj.name+'" added successfully','ok');
@@ -1865,14 +1865,19 @@ function taskCommentsHTML(pid, t){
             '<button class="proof-del" style="font-size:10px" onclick="deleteTaskComment(\''+pid+'\',\''+t.id+'\','+i+')" title="Delete comment">&#10005;</button>'+
           '</div>'+
         '</div>'+
-        '<div class="task-comment-text">'+h(c.text)+'</div>'+
+        (c.text?'<div class="task-comment-text">'+h(c.text)+'</div>':'')+
+        (c.link&&c.link.url?'<a class="proof-open" href="'+h(c.link.url)+'" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:11px">&#128279; '+h(c.link.label||'Open link')+' &#8599;</a>':'')+
         '</div>';
     }).join('');
   }
-  html+='<div style="display:flex;gap:6px;margin-top:6px">'+
+  html+='<div style="margin-top:6px">'+
     '<textarea class="task-comment-input" id="tc-'+t.id+'" placeholder="Add a comment..."></textarea>'+
-    '<button class="btn btn-primary" style="padding:4px 10px;font-size:11px;white-space:nowrap;align-self:flex-end" '+
-    'onclick="addTaskComment(\'' +pid+ '\',\'' +t.id+ '\')">Add</button>'+
+    '<div style="display:flex;gap:6px;margin-top:4px;align-items:center">'+
+      '<input id="tcl-'+t.id+'" placeholder="Link label (optional)" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--bg);color:var(--text)" />'+
+      '<input id="tcu-'+t.id+'" placeholder="Paste link (optional)" style="flex:2;min-width:0;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--bg);color:var(--text)" />'+
+      '<button class="btn btn-primary" style="padding:5px 12px;font-size:11px;white-space:nowrap;flex-shrink:0" '+
+      'onclick="addTaskComment(\'' +pid+ '\',\'' +t.id+ '\')">Add</button>'+
+    '</div>'+
     '</div>'+
     '</div>';
   return html;
@@ -1913,16 +1918,25 @@ function addTaskComment(pid, tid){
   var p=gp(pid);if(!p||!p.tasks)return;
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
   var ta=document.getElementById('tc-'+tid);
-  if(!ta||!ta.value.trim())return;
+  var lblEl=document.getElementById('tcl-'+tid);
+  var urlEl=document.getElementById('tcu-'+tid);
+  var text=ta?ta.value.trim():'';
+  var linkUrl=urlEl?urlEl.value.trim():'';
+  var linkLabel=lblEl?lblEl.value.trim():'';
+  if(!text&&!linkUrl)return;
   var whoName='Team';
   if(ST.viewAs!=='all'){var wm=gm(ST.viewAs);if(wm&&wm.name)whoName=wm.name;}
   if(!t.comments)t.comments=[];
-  t.comments.push({
+  var cmt={
     who:whoName,
     when:new Date().toLocaleString(),
-    text:ta.value.trim()
-  });
-  ta.value='';
+    text:text
+  };
+  if(linkUrl)cmt.link={url:linkUrl,label:linkLabel||'Open link'};
+  t.comments.push(cmt);
+  if(ta)ta.value='';
+  if(lblEl)lblEl.value='';
+  if(urlEl)urlEl.value='';
   mutate();
   if(ST.project===pid)renderDetail(p);
   toast('Comment added','ok');
@@ -2089,7 +2103,7 @@ function openNewProject(tplId){
     if(!nm){alert('Please enter a project name.');return;}
     var tasks=[];
     if(tplId){var tpl=TEMPLATES.find(function(t){return t.id===tplId;});if(tpl)tasks=tpl.tasks.map(function(t){return {id:uid(),title:t.title,cat:t.cat,pri:t.pri,done:false,assign:document.getElementById('np-lead').value};});}
-    DB.projects.push({id:uid(),name:nm,entity:document.getElementById('np-ent').value,status:document.getElementById('np-stat').value,priority:document.getElementById('np-pri').value,progress:0,due:document.getElementById('np-due').value||null,lead:document.getElementById('np-lead').value,members:[document.getElementById('np-lead').value],desc:document.getElementById('np-desc').value.trim(),tasks:tasks,notes:[],docs:[]});
+    DB.projects.unshift({id:uid(),name:nm,entity:document.getElementById('np-ent').value,status:document.getElementById('np-stat').value,priority:document.getElementById('np-pri').value,progress:0,due:document.getElementById('np-due').value||null,lead:document.getElementById('np-lead').value,members:[document.getElementById('np-lead').value],desc:document.getElementById('np-desc').value.trim(),tasks:tasks,notes:[],docs:[]});
     closeModal();mutate();toast('Project created & saved','ok');
   };
   showModal();setTimeout(function(){var el=document.getElementById('np-nm');if(el)el.focus();},80);
