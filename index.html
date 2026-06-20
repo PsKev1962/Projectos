@@ -1651,6 +1651,7 @@ function renderDetail(p){
           '</div>'+
         '</div>'+
       taskProofHTML(p.id,t)+
+      taskLinksHTML(p.id,t)+
       taskCommentsHTML(p.id,t)+
       '</div>';
     }).join('');
@@ -1785,6 +1786,64 @@ function removeTaskProof(pid,tid,idx){
   mutate();
   if(ST.project===pid)renderDetail(p);
   toast('Proof removed','ok');
+}
+
+function taskLinksHTML(pid, t){
+  var links=t.links||[];
+  var wid='tln-'+t.id;
+  var html='<div class="proof-section" id="'+wid+'">';
+  html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'+
+    '<span style="font-size:11px;color:var(--text3);font-weight:600">'+
+      (links.length>0?'&#128279; '+links.length+' link'+(links.length!==1?'s':''):'&#128279; Links & Documents')+
+    '</span>'+
+  '</div>';
+  if(!links.length){
+    html+='<div style="font-size:10px;color:var(--text4);margin-bottom:6px;line-height:1.4">Attach any number of reference links — Drive, Dropbox, briefs, intake forms, etc.</div>';
+  }
+  links.forEach(function(ln,i){
+    html+='<div class="proof-item">'+
+      '<span class="proof-icon">&#128196;</span>'+
+      '<div class="proof-body">'+
+        '<div class="proof-label">'+h(ln.label||'Link '+( i+1))+'</div>'+
+      '</div>'+
+      '<a class="proof-open" href="'+h(ln.url)+'" target="_blank">Open &#8599;</a>'+
+      '<button class="proof-del" data-pid="'+pid+'" data-tid="'+t.id+'" data-idx="'+i+'" onclick="removeTaskLink(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'),parseInt(this.getAttribute(\'data-idx\')))">&#10005;</button>'+
+    '</div>';
+  });
+  html+='<div class="proof-add-row">'+
+    '<input id="lnl-'+t.id+'" placeholder="Label e.g. Design Brief" />'+
+    '<input id="lnu-'+t.id+'" placeholder="Paste a link (Drive, Dropbox, doc...)" />'+
+    '<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;flex-shrink:0" '+
+      'data-pid="'+pid+'" data-tid="'+t.id+'" '+
+      'onclick="addTaskLink(this.getAttribute(\'data-pid\'),this.getAttribute(\'data-tid\'))">Attach</button>'+
+  '</div>';
+  html+='</div>';
+  return html;
+}
+
+function addTaskLink(pid,tid){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
+  var urlEl=document.getElementById('lnu-'+tid);
+  var lblEl=document.getElementById('lnl-'+tid);
+  if(!urlEl||!urlEl.value.trim()){toast('Please paste a link first','err');return;}
+  var url=urlEl.value.trim();
+  var label=lblEl?lblEl.value.trim():'';
+  if(!label)label='Link '+(( t.links||[]).length+1);
+  if(!t.links)t.links=[];
+  t.links.push({url:url,label:label});
+  mutate();
+  if(ST.project===pid)renderDetail(p);
+  toast('&#128279; Link attached!','ok');
+}
+
+function removeTaskLink(pid,tid,idx){
+  var p=gp(pid);if(!p||!p.tasks)return;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.links)return;
+  t.links.splice(idx,1);
+  mutate();
+  if(ST.project===pid)renderDetail(p);
+  toast('Link removed','ok');
 }
 
 function taskCommentsHTML(pid, t){
