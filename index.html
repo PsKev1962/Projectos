@@ -1026,6 +1026,60 @@ function kbDrop(col,colId){
   renderAll();
 }
 
+function drawGanttSVG(containerId,cfg){
+  var winStart=cfg.winStart,winEnd=cfg.winEnd,now=cfg.now,totalDays=cfg.totalDays;
+  var labelW=cfg.labelW,rowH=cfg.rowH,headerH=cfg.headerH,gutterH=cfg.gutterH,barH=cfg.barH,barY=cfg.barY,totalH=cfg.totalH;
+  var projs=cfg.projs;
+  var months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  function dx(d,w){return labelW+Math.round(Math.round((d-winStart)/86400000)/totalDays*w);}
+  function draw(){
+    var el=document.getElementById(containerId);if(!el)return;
+    var w=Math.max(el.offsetWidth||700,600);var H=totalH;var s="";
+    var cur=new Date(winStart.getTime());cur.setDate(1);if(cur<winStart)cur.setMonth(cur.getMonth()+1);
+    while(cur<winEnd){var mx=dx(cur,w);if(mx>=labelW){
+      s+='<text x="'+mx+'" y="22" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif" font-weight="600">'+months[cur.getMonth()]+' '+cur.getFullYear()+'</text>';
+      s+='<line x1="'+mx+'" y1="26" x2="'+mx+'" y2="'+H+'" stroke="#e5e7eb" stroke-width="1"/>';
+    }cur.setMonth(cur.getMonth()+1);}
+    var wcur=new Date(winStart.getTime());var wd=wcur.getDay();wcur.setDate(wcur.getDate()+(wd===0?0:7-wd));
+    while(wcur<winEnd){var wx=dx(wcur,w);if(wx>labelW)s+='<line x1="'+wx+'" y1="'+headerH+'" x2="'+wx+'" y2="'+H+'" stroke="#f3f4f6" stroke-width="1"/>';wcur.setDate(wcur.getDate()+7);}
+    projs.forEach(function(p,i){
+      var y=headerH+i*(rowH+gutterH);
+      s+='<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" fill="'+(i%2===0?"#ffffff":"#f8f9fb")+'"/>';
+      var sd=p.status==="done"?"#22c55e":p.status==="risk"?"#ef4444":p.status==="hold"?"#eab308":p.color;
+      s+='<circle cx="10" cy="'+(y+rowH/2)+'" r="4" fill="'+sd+'"/>';
+      var lbl=p.name.length>22?p.name.slice(0,20)+"...":p.name;
+      s+='<text x="20" y="'+(y+rowH/2+1)+'" dominant-baseline="middle" font-size="12" font-weight="600" fill="#111827" font-family="system-ui,sans-serif" style="cursor:pointer" onclick="selectProj(\''+p.id+'\')">'+lbl+'</text>';
+      if(p.due){
+        var due=new Date(p.due);due.setHours(12,0,0,0);
+        var ns=new Date(due.getTime());ns.setDate(ns.getDate()-28);
+        if(ns.getTime()<winStart.getTime())ns=new Date(winStart.getTime());
+        if(ns.getTime()>due.getTime())ns=new Date(now.getTime());
+        var x1=dx(ns,w);if(x1<labelW)x1=labelW;
+        var x2=dx(due,w);var bw=Math.max(x2-x1,6);
+        var fgw=p.pct>0?Math.max(Math.round(bw*p.pct/100),3):0;
+        s+='<rect x="'+x1+'" y="'+(y+barY)+'" width="'+bw+'" height="'+barH+'" rx="4" fill="'+p.color+'22" style="cursor:pointer" onclick="selectProj(\''+p.id+'\')"/>';
+        if(fgw>0)s+='<rect x="'+x1+'" y="'+(y+barY)+'" width="'+fgw+'" height="'+barH+'" rx="4" fill="'+p.color+'" opacity="0.8" style="cursor:pointer" onclick="selectProj(\''+p.id+'\')"/>';
+        var dmx=dx(due,w);
+        s+='<polygon points="'+dmx+","+(y+barY-2)+' '+(dmx+5)+","+(y+rowH/2)+' '+dmx+","+(y+barY+barH+2)+' '+(dmx-5)+","+(y+rowH/2)+'" fill="'+p.color+'" style="cursor:pointer" onclick="selectProj(\''+p.id+'\')"/>';
+        var dlbl=due.toLocaleDateString("en-AU",{day:"numeric",month:"short"});
+        s+='<text x="'+(dmx+9)+'" y="'+(y+rowH/2+1)+'" dominant-baseline="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">'+dlbl+'</text>';
+        if(p.pct>0)s+='<text x="'+(x1+4)+'" y="'+(y+rowH/2+1)+'" dominant-baseline="middle" font-size="10" font-weight="700" fill="white" font-family="system-ui,sans-serif">'+p.pct+'%</text>';
+      }else{
+        s+='<rect x="'+(labelW+4)+'" y="'+(y+barY)+'" width="58" height="'+barH+'" rx="4" fill="#e5e7eb"/>';
+        s+='<text x="'+(labelW+8)+'" y="'+(y+rowH/2+1)+'" dominant-baseline="middle" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">No due date</text>';
+      }
+    });
+    var tx=dx(now,w);
+    s+='<line x1="'+tx+'" y1="0" x2="'+tx+'" y2="'+H+'" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>';
+    s+='<rect x="'+(tx-18)+'" y="4" width="36" height="16" rx="8" fill="#ef4444"/>';
+    s+='<text x="'+tx+'" y="12" dominant-baseline="middle" font-size="9" font-weight="700" fill="white" font-family="system-ui,sans-serif" text-anchor="middle">TODAY</text>';
+    el.innerHTML='<svg width="'+w+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+  }
+  draw();
+  if(window.ganttResizeObs)window.ganttResizeObs.disconnect();
+  try{window.ganttResizeObs=new ResizeObserver(function(){draw();});window.ganttResizeObs.observe(document.getElementById(containerId));}catch(e){window.addEventListener("resize",draw);}
+}
+
 function renderGantt(){
   var projs=fps();
   var now=new Date();now.setHours(0,0,0,0);
@@ -1064,62 +1118,8 @@ function renderGantt(){
     return {id:p.id,name:p.name,due:p.due,status:p.status,color:isOver?'#ef4444':e.color,pct:projPct(p)};
   });
 
-  html+='<script>(function(){'+
-    'var winStart=new Date('+winStart.getTime()+');'+
-    'var winEnd=new Date('+winEnd.getTime()+');'+
-    'var now=new Date('+now.getTime()+');'+
-    'var totalDays='+totalDays+';'+
-    'var labelW='+labelW+';var rowH='+rowH+';var headerH='+headerH+';var gutterH='+gutterH+';var barH='+barH+';var barY='+barY+';var totalH='+totalH+';'+
-    'var projs='+JSON.stringify(projData)+';'+
-    'var months=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];'+
-    'function dx(d,w){return labelW+Math.round(Math.round((d-winStart)/86400000)/totalDays*w);}'+
-    'function draw(){'+
-      'var el=document.getElementById("'+containerId+'");if(!el)return;'+
-      'var w=Math.max(el.offsetWidth||700,600);var H=totalH;var s="";'+
-      'var cur=new Date(winStart.getTime());cur.setDate(1);if(cur<winStart)cur.setMonth(cur.getMonth()+1);'+
-      'while(cur<winEnd){var mx=dx(cur,w);if(mx>=labelW){'+
-        's+=\'<text x="\'+mx+\'" y="22" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif" font-weight="600">\'+months[cur.getMonth()]+\' \'+cur.getFullYear()+\'</text>\';'+
-        's+=\'<line x1="\'+mx+\'" y1="26" x2="\'+mx+\'" y2="\'+H+\'" stroke="#e5e7eb" stroke-width="1"/>\';'+
-      '}cur.setMonth(cur.getMonth()+1);}'+
-      'var wcur=new Date(winStart.getTime());var wd=wcur.getDay();wcur.setDate(wcur.getDate()+(wd===0?0:7-wd));'+
-      'while(wcur<winEnd){var wx=dx(wcur,w);if(wx>labelW)s+=\'<line x1="\'+wx+\'" y1="\'+headerH+\'" x2="\'+wx+\'" y2="\'+H+\'" stroke="#f3f4f6" stroke-width="1"/>\';wcur.setDate(wcur.getDate()+7);}'+
-      'projs.forEach(function(p,i){'+
-        'var y=headerH+i*(rowH+gutterH);'+
-        's+=\'<rect x="0" y="\'+y+\'" width="\'+w+\'" height="\'+rowH+\'" fill="\'+( i%2===0?"#ffffff":"#f8f9fb")+\'"/>\';'+
-        'var sd=p.status==="done"?"#22c55e":p.status==="risk"?"#ef4444":p.status==="hold"?"#eab308":p.color;'+
-        's+=\'<circle cx="10" cy="\'+( y+rowH/2)+\'" r="4" fill="\'+sd+\'"/>\';'+
-        'var lbl=p.name.length>22?p.name.slice(0,20)+"...":p.name;'+
-        's+=\'<text x="20" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="12" font-weight="600" fill="#111827" font-family="system-ui,sans-serif" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)">\'+lbl+\'</text>\';'+
-        'if(p.due){'+
-          'var due=new Date(p.due);due.setHours(12,0,0,0);'+
-          'var ns=new Date(due.getTime());ns.setDate(ns.getDate()-28);'+
-          'if(ns.getTime()<winStart.getTime())ns=new Date(winStart.getTime());'+
-          'if(ns.getTime()>due.getTime())ns=new Date(now.getTime());'+
-          'var x1=dx(ns,w);if(x1<labelW)x1=labelW;'+
-          'var x2=dx(due,w);var bw=Math.max(x2-x1,6);'+
-          'var fgw=p.pct>0?Math.max(Math.round(bw*p.pct/100),3):0;'+
-          's+=\'<rect x="\'+x1+\'" y="\'+( y+barY)+\'" width="\'+bw+\'" height="\'+barH+\'" rx="4" fill="\'+p.color+\'22" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
-          'if(fgw>0)s+=\'<rect x="\'+x1+\'" y="\'+( y+barY)+\'" width="\'+fgw+\'" height="\'+barH+\'" rx="4" fill="\'+p.color+\'" opacity="0.8" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
-          'var dmx=dx(due,w);'+
-          's+=\'<polygon points="\'+dmx+",\"+( y+barY-2)+\' \'+( dmx+5)+",\"+( y+rowH/2)+\' \'+dmx+",\"+( y+barY+barH+2)+\' \'+( dmx-5)+",\"+( y+rowH/2)+\'" fill="\'+p.color+\'" style="cursor:pointer" onclick="selectProj(\\x27\'+p.id+\'\\x27)"/>\';'+
-          'var dlbl=due.toLocaleDateString("en-AU",{day:"numeric",month:"short"});'+
-          's+=\'<text x="\'+( dmx+9)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" fill="#6b7280" font-family="system-ui,sans-serif">\'+dlbl+\'</text>\';'+
-          'if(p.pct>0)s+=\'<text x="\'+( x1+4)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" font-weight="700" fill="white" font-family="system-ui,sans-serif">\'+p.pct+\'%</text>\';'+
-        '}else{'+
-          's+=\'<rect x="\'+( labelW+4)+\'" y="\'+( y+barY)+\'" width="58" height="\'+barH+\'" rx="4" fill="#e5e7eb"/>\';'+
-          's+=\'<text x="\'+( labelW+8)+\'" y="\'+( y+rowH/2+1)+\'" dominant-baseline="middle" font-size="10" fill="#9ca3af" font-family="system-ui,sans-serif">No due date</text>\';'+
-        '}'+
-      '});'+
-      'var tx=dx(now,w);'+
-      's+=\'<line x1="\'+tx+\'" y1="0" x2="\'+tx+\'" y2="\'+H+\'" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>\';'+
-      's+=\'<rect x="\'+( tx-18)+\'" y="4" width="36" height="16" rx="8" fill="#ef4444"/>\';'+
-      's+=\'<text x="\'+tx+\'" y="12" dominant-baseline="middle" font-size="9" font-weight="700" fill="white" font-family="system-ui,sans-serif" text-anchor="middle">TODAY</text>\';'+
-      'el.innerHTML=\'<svg width="\'+w+\'" height="\'+H+\'" xmlns="http://www.w3.org/2000/svg">\'+s+\'</svg>\';'+
-    '}'+
-    'draw();'+
-    'if(window.ganttResizeObs)window.ganttResizeObs.disconnect();'+
-    'try{window.ganttResizeObs=new ResizeObserver(function(){draw();});window.ganttResizeObs.observe(document.getElementById("'+containerId+'"));}catch(e){window.addEventListener("resize",draw);}'+
-  '})();<\/script>';
+  var ganttCfg={winStart:winStart,winEnd:winEnd,now:now,totalDays:totalDays,labelW:labelW,rowH:rowH,headerH:headerH,gutterH:gutterH,barH:barH,barY:barY,totalH:totalH,projs:projData};
+  setTimeout(function(){drawGanttSVG(containerId,ganttCfg);},0);
 
   return html;
 }
