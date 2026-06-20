@@ -2014,6 +2014,26 @@ function subtaskListHTML(pid,t){
   return html;
 }
 
+function notifySubtaskAssignee(p, t, st, mid){
+  if(!mid)return;
+  var m=gm(mid);
+  if(!m||!m.email)return;
+  var first=m.name?h(m.name.split(' ')[0]):'there';
+  var html=
+    '<div style="font-family:-apple-system,Segoe UI,sans-serif;font-size:14px;color:#222;line-height:1.6">'+
+    '<p>Hi '+first+',</p>'+
+    '<p>You\'ve been assigned a sub-task in ProjectOS:</p>'+
+    '<p style="background:#f1f3f6;border-radius:8px;padding:12px 14px;margin:10px 0">'+
+      '<strong style="font-size:15px">'+h(st.title)+'</strong><br>'+
+      'Task: '+h(t.title)+'<br>'+
+      'Project: '+h(p.name)+
+    '</p>'+
+    '<p style="margin:16px 0"><a href="https://thejunctiongc.com/portal" style="background:#4f46e5;color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;display:inline-block">Open ProjectOS</a></p>'+
+    '<p style="color:#888;font-size:12px;margin-top:18px">— ProjectOS · The Junction</p>'+
+    '</div>';
+  sendEmail(m.email,'New sub-task assigned: '+st.title,html)['catch'](function(){});
+}
+
 function addSubtask(pid,tid){
   var p=gp(pid);if(!p||!p.tasks)return;
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
@@ -2021,10 +2041,17 @@ function addSubtask(pid,tid){
   var assignEl=document.getElementById('st-assign-'+tid);
   if(!titleEl||!titleEl.value.trim())return;
   if(!t.subtasks)t.subtasks=[];
-  t.subtasks.push({id:uid(),title:titleEl.value.trim(),assign:assignEl?assignEl.value:'',done:false});
+  var newSt={id:uid(),title:titleEl.value.trim(),assign:assignEl?assignEl.value:'',done:false};
+  t.subtasks.push(newSt);
   recalcTaskProgress(t);
   if(ST.project===pid)renderDetail(p);
-  mutate();toast('Sub-task added','ok');
+  mutate();
+  if(newSt.assign){
+    notifySubtaskAssignee(p,t,newSt,newSt.assign);
+    toast('Sub-task added — emailing assignee','ok');
+  } else {
+    toast('Sub-task added','ok');
+  }
 }
 
 function toggleSubtask(pid,tid,stid){
@@ -2042,7 +2069,13 @@ function assignSubtask(pid,tid,stid,val){
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return;
   var st=t.subtasks.find(function(x){return x.id===stid;});if(!st)return;
   st.assign=val;
-  mutate();toast('Sub-task assigned','ok');
+  mutate();
+  if(val){
+    notifySubtaskAssignee(p,t,st,val);
+    toast('Sub-task assigned — emailing assignee','ok');
+  } else {
+    toast('Sub-task unassigned','ok');
+  }
 }
 
 function deleteSubtask(pid,tid,stid){
