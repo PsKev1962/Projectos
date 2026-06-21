@@ -628,7 +628,12 @@ var TEMPLATES = [
 ];
 
 var DB = {entities:[],members:[],projects:[],pdfDocs:[]};
-var ST = {view:'dashboard',entity:null,project:null,fstat:'all',search:'',filterMember:'all',filterDue:'all',filterSort:'default',viewAs:'all'};
+var ST = {view:'dashboard',entity:null,project:null,fstat:'all',search:'',filterMember:'all',filterDue:'all',filterSort:'default',viewAs:'all',sqUnlocked:false};
+
+// Shared accident-guard password for the Squarespace section.
+// This is a guardrail against accidental edits by logged-in team members,
+// not a security control — real access control is the Supabase login.
+var SQ_GUARD_PASSWORD = 'junction';
 
 // ── HELPERS ──
 function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -816,6 +821,7 @@ function renderAll(){
 }
 
 function setView(v){
+  if(v!=='squarespace'){ ST.sqUnlocked=false; }
   ST.view=v;ST.project=null;
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   var a=document.querySelector('[data-view="'+v+'"]');if(a)a.classList.add('active');
@@ -1667,6 +1673,17 @@ function renderTpls(){
 }
 
 function renderSQ(){
+  if(!ST.sqUnlocked){
+    return '<div class="page-header"><div class="page-title">🟦 Squarespace</div></div>'+
+      '<div style="max-width:420px;margin:40px auto 0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px;text-align:center">'+
+        '<div style="font-size:32px;margin-bottom:8px">🔒</div>'+
+        '<div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">Protected section</div>'+
+        '<div style="font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.5">This area links straight to the live websites. Enter the access word to continue. If you are not sure, check with Ps Kev before changing anything here.</div>'+
+        '<input class="fi" id="sq-guard-input" type="password" placeholder="Access word" style="width:100%;text-align:center;font-size:15px" onkeydown="if(event.key===\'Enter\')sqUnlock()">'+
+        '<button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="sqUnlock()">Unlock</button>'+
+        '<div id="sq-guard-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px">That access word is not right.</div>'+
+      '</div>';
+  }
   var links=[{icon:'🏠',label:'Dashboard',sub:'Main account',url:'https://account.squarespace.com'},{icon:'📄',label:'Pages',sub:'Manage pages',url:'https://account.squarespace.com/website/pages'},{icon:'📝',label:'Blog',sub:'Posts & drafts',url:'https://account.squarespace.com/website/blog'},{icon:'🛍',label:'Commerce',sub:'Products & orders',url:'https://account.squarespace.com/commerce'},{icon:'📈',label:'Analytics',sub:'Traffic & sales',url:'https://account.squarespace.com/analytics'}];
   var html='<div class="page-header"><div class="page-title">🟦 Squarespace</div></div>'+
     '<div class="section-header"><div class="section-title">Quick Access</div></div>'+
@@ -1677,6 +1694,19 @@ function renderSQ(){
       '<span style="color:var(--text3);font-size:12px">All data syncs automatically via Supabase.</span><br>'+
       '<a href="https://supabase.com/dashboard/project/zybjazzlfahpriiwalnu" target="_blank" style="color:var(--accent);font-size:12px">Open Supabase Dashboard →</a></div>';
   return html;
+}
+
+function sqUnlock(){
+  var inp=document.getElementById('sq-guard-input');
+  var err=document.getElementById('sq-guard-error');
+  var val=inp?inp.value:'';
+  if(val===SQ_GUARD_PASSWORD){
+    ST.sqUnlocked=true;
+    renderAll();
+  } else {
+    if(err)err.style.display='block';
+    if(inp){inp.value='';inp.focus();}
+  }
 }
 
 
