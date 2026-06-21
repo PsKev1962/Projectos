@@ -714,7 +714,7 @@ function loadData(cb){
     });
     DB.projects = projects.map(function(p){
       var ptasks = tasks.filter(function(t){return t.project_id===p.id;}).map(function(t){
-        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', notes:t.notes||'', subtasks:t.subtasks||[], proofs:t.proofs||[]};
+        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', notes:t.notes||'', thankedAt:t.thanked_at||null, subtasks:t.subtasks||[], proofs:t.proofs||[]};
       });
       return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
     });
@@ -745,7 +745,7 @@ function saveData(cb){
   DB.projects.forEach(function(p){
     projectRows.push({id:p.id, name:p.name, description:p.desc||'', status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due_date:p.due||null, lead:p.lead||null, members:p.members||[], notes:p.notes||[], docs:p.docs||[], entity_id:p.entity||null});
     (p.tasks||[]).forEach(function(t){
-      taskRows.push({id:t.id, title:t.title, description:t.desc||'', notes:t.notes||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], project_id:p.id, entity_id:p.entity||null});
+      taskRows.push({id:t.id, title:t.title, description:t.desc||'', notes:t.notes||'', thanked_at:t.thankedAt||null, status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], project_id:p.id, entity_id:p.entity||null});
     });
   });
   var slDocRows = (DB.pdfDocs||[]).map(function(d){
@@ -2142,6 +2142,10 @@ function toggleTask(pid,tid){
   var p=gp(pid);if(!p||!p.tasks)return;
   var t=p.tasks.find(function(x){return x.id===tid;});if(!t)return;
   t.done=!t.done;
+  if(t.done&&!t.thankedAt){
+    t.thankedAt=Date.now();
+    notifyTaskComplete(p,t);
+  }
   var dn=p.tasks.filter(function(x){return x.done;}).length;
   p.progress=p.tasks.length?Math.round(dn/p.tasks.length*100):0;
   if(ST.project===pid)renderDetail(p);
@@ -2174,6 +2178,10 @@ function completeTaskFinal(pid,tid){
     recalcTaskProgress(t);
   }else{
     t.done=true;t.progress=100;
+    if(!t.thankedAt){
+      t.thankedAt=Date.now();
+      notifyTaskComplete(p,t);
+    }
   }
   if(ST.project===pid)renderDetail(p);
   mutate();toast(t.done?'Task signed off as complete!':'Task reopened','ok');
@@ -2558,6 +2566,33 @@ function sendEmail(to, subject, html){
       'Authorization':'Bearer '+SUPABASE_KEY
     },
     body:JSON.stringify({to:to, subject:subject, html:html})
+  });
+}
+
+function notifyTaskComplete(p, t){
+  // Gather everyone who worked on this task: task assignees + sub-task assignees, deduped.
+  var ids = {};
+  var ta = t.assignees && t.assignees.length ? t.assignees : (t.assign ? [t.assign] : []);
+  ta.forEach(function(id){ if(id) ids[id]=true; });
+  (t.subtasks||[]).forEach(function(st){ if(st.assign) ids[st.assign]=true; });
+  var idList = Object.keys(ids);
+  if(!idList.length) return;
+  idList.forEach(function(id){
+    var m = gm(id);
+    if(!m || !m.email) return;
+    var first = m.name ? h(m.name.split(' ')[0]) : 'there';
+    var html =
+      '<div style="font-family:-apple-system,Segoe UI,sans-serif;font-size:14px;color:#222;line-height:1.6">'+
+      '<p>Hi '+first+',</p>'+
+      '<p>A task you worked on has just been completed &mdash; thank you for your part in it!</p>'+
+      '<p style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:12px 14px;margin:10px 0">'+
+        '<strong style="font-size:15px">&#9989; '+h(t.title)+'</strong><br>'+
+        'Project: '+h(p.name)+
+      '</p>'+
+      '<p>Your work is appreciated.</p>'+
+      '<p style="color:#888;font-size:12px;margin-top:18px">&mdash; ProjectOS &middot; The Junction<br>Bless Ya Heaps, Ps Kev</p>'+
+      '</div>';
+    sendEmail(m.email, 'Thank you — "'+t.title+'" is complete', html)['catch'](function(){});
   });
 }
 
