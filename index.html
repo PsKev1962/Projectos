@@ -2188,15 +2188,24 @@ function subtaskListHTML(pid,t){
     '<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);margin-bottom:6px">Sub-tasks'+(subs.length?' ('+subs.filter(function(x){return x.done;}).length+'/'+subs.length+')':'')+'</div>';
   if(subs.length){
     html+=subs.map(function(st){
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">'+
+      var cCount=(st.comments&&st.comments.length)||0;
+      var lCount=(st.links&&st.links.length)||0;
+      var badge='';
+      if(cCount||lCount){
+        badge=' <span style="font-size:10px;color:var(--text4)">'+(cCount?'&#128172;'+cCount:'')+(cCount&&lCount?' ':'')+(lCount?'&#128279;'+lCount:'')+'</span>';
+      }
+      var row='<div style="display:flex;align-items:center;gap:8px;padding:5px 0">'+
         '<div class="tck'+(st.done?' done':'')+'" style="width:14px;height:14px" onclick="toggleSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')">'+(st.done?'✓':'')+'</div>'+
-        '<span style="flex:1;font-size:12px;color:'+(st.done?'var(--text4)':'var(--text2)')+';text-decoration:'+(st.done?'line-through':'none')+'">'+h(st.title)+'</span>'+
+        '<span style="flex:1;font-size:12px;color:'+(st.done?'var(--text4)':'var(--text2)')+';text-decoration:'+(st.done?'line-through':'none')+'">'+h(st.title)+badge+'</span>'+
+        '<button class="proof-del" style="font-size:13px" onclick="toggleSubDetail(\''+t.id+'\',\''+st.id+'\')" title="Notes &amp; links">&#9881;</button>'+
         '<select class="fs" style="font-size:11px;padding:2px 6px;width:auto;max-width:110px" onchange="assignSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\',this.value)">'+
           '<option value=""'+(!st.assign?' selected':'')+'>Unassigned</option>'+
           DB.members.map(function(mm){return '<option value="'+mm.id+'"'+(st.assign===mm.id?' selected':'')+'>'+h(mm.name)+'</option>';}).join('')+
         '</select>'+
         '<button class="proof-del" onclick="deleteSubtask(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')" title="Remove">&#10005;</button>'+
       '</div>';
+      row+=renderSubDetail(pid,t,st);
+      return row;
     }).join('');
   }
   html+='<div style="display:flex;gap:6px;margin-top:6px">'+
@@ -2208,6 +2217,94 @@ function subtaskListHTML(pid,t){
     '<button class="btn btn-primary" style="font-size:12px;padding:6px 12px;flex-shrink:0" onclick="addSubtask(\''+pid+'\',\''+t.id+'\')">+ Add</button>'+
   '</div></div>';
   return html;
+}
+
+// ── SUB-TASK NOTES & LINKS (collapsible, per sub-task) ──
+var _subOpen = {};
+function toggleSubDetail(tid, sid){
+  var key = tid+'|'+sid;
+  _subOpen[key] = !_subOpen[key];
+  var el = document.getElementById('subdetail-'+sid);
+  if(el) el.style.display = _subOpen[key] ? 'block' : 'none';
+}
+function renderSubDetail(pid, t, st){
+  var key = t.id+'|'+st.id;
+  var open = !!_subOpen[key];
+  var comments = st.comments || [];
+  var links = st.links || [];
+  var inner = '';
+  // comments
+  if(comments.length){
+    inner += comments.map(function(c,i){
+      return '<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;gap:6px">'+
+        '<span style="flex:1;word-break:break-word">'+h(c.text||c)+'</span>'+
+        '<span class="proof-del" style="cursor:pointer;color:var(--red)" onclick="delSubComment(\''+pid+'\',\''+t.id+'\',\''+st.id+'\','+i+')">&#10005;</span>'+
+      '</div>';
+    }).join('');
+  }
+  inner += '<div style="display:flex;gap:6px;margin:4px 0 8px">'+
+    '<input class="fi" id="subc-'+st.id+'" placeholder="Add a comment..." style="font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addSubComment(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')}">'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 10px;flex-shrink:0" onclick="addSubComment(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')">Add</button>'+
+  '</div>';
+  // links
+  if(links.length){
+    inner += links.map(function(l,i){
+      return '<div style="font-size:12px;margin-bottom:4px;display:flex;justify-content:space-between;gap:6px">'+
+        '<a href="'+h(l.url)+'" target="_blank" style="color:var(--accent);flex:1;word-break:break-all">&#128279; '+h(l.label||l.url)+'</a>'+
+        '<span class="proof-del" style="cursor:pointer;color:var(--red)" onclick="delSubLink(\''+pid+'\',\''+t.id+'\',\''+st.id+'\','+i+')">&#10005;</span>'+
+      '</div>';
+    }).join('');
+  }
+  inner += '<div style="display:flex;gap:6px;margin-top:4px">'+
+    '<input class="fi" id="subll-'+st.id+'" placeholder="Link label (optional)" style="font-size:12px;padding:6px 8px;max-width:150px">'+
+    '<input class="fi" id="sblu-'+st.id+'" placeholder="Paste link" style="font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addSubLink(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')}">'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 10px;flex-shrink:0" onclick="addSubLink(\''+pid+'\',\''+t.id+'\',\''+st.id+'\')">Attach</button>'+
+  '</div>';
+  return '<div id="subdetail-'+st.id+'" style="display:'+(open?'block':'none')+';margin:0 0 8px 22px;padding:8px 10px;border-left:2px solid var(--border);background:var(--bg2)">'+inner+'</div>';
+}
+function _findSub(pid,tid,sid){
+  var p=gp(pid);if(!p||!p.tasks)return null;
+  var t=p.tasks.find(function(x){return x.id===tid;});if(!t||!t.subtasks)return null;
+  var st=t.subtasks.find(function(x){return x.id===sid;});if(!st)return null;
+  return {p:p,t:t,st:st};
+}
+function addSubComment(pid,tid,sid){
+  var f=_findSub(pid,tid,sid);if(!f)return;
+  var el=document.getElementById('subc-'+sid);
+  if(!el||!el.value.trim())return;
+  if(!f.st.comments)f.st.comments=[];
+  f.st.comments.push({text:el.value.trim(),ts:Date.now()});
+  _subOpen[tid+'|'+sid]=true;
+  renderDetail(f.p);
+  mutate();
+  toast('Comment added','ok');
+}
+function delSubComment(pid,tid,sid,idx){
+  var f=_findSub(pid,tid,sid);if(!f||!f.st.comments)return;
+  f.st.comments.splice(idx,1);
+  _subOpen[tid+'|'+sid]=true;
+  renderDetail(f.p);
+  mutate();
+}
+function addSubLink(pid,tid,sid){
+  var f=_findSub(pid,tid,sid);if(!f)return;
+  var uel=document.getElementById('sblu-'+sid);
+  var lel=document.getElementById('subll-'+sid);
+  if(!uel||!uel.value.trim())return;
+  var label=lel&&lel.value.trim()?lel.value.trim():('Link '+((f.st.links||[]).length+1));
+  if(!f.st.links)f.st.links=[];
+  f.st.links.push({url:uel.value.trim(),label:label});
+  _subOpen[tid+'|'+sid]=true;
+  renderDetail(f.p);
+  mutate();
+  toast('Link attached','ok');
+}
+function delSubLink(pid,tid,sid,idx){
+  var f=_findSub(pid,tid,sid);if(!f||!f.st.links)return;
+  f.st.links.splice(idx,1);
+  _subOpen[tid+'|'+sid]=true;
+  renderDetail(f.p);
+  mutate();
 }
 
 function notifySubtaskAssignee(p, t, st, mid){
