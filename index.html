@@ -1848,9 +1848,10 @@ function renderDetail(p){
             completionRow+
           '</div>'+
         '</div>'+
-      taskProofHTML(p.id,t)+
-      taskLinksHTML(p.id,t)+
-      taskCommentsHTML(p.id,t)+
+      ''+/* Stage 2b: Proof of completion, task-level Links, and task-level Comments removed.
+            Evidence and discussion now live per sub-task (Stage 1) and at project level (Stage 2a).
+            Builder functions taskProofHTML / taskLinksHTML / taskCommentsHTML are retained
+            but no longer rendered. */
       '</div>';
     }).join('');
   }
