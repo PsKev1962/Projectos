@@ -644,6 +644,7 @@ function uid(){return 'x'+Date.now()+Math.floor(Math.random()*9999);}
 function isOD(p){var d=parseDue(p.due);return d&&d<new Date()&&p.status!=='done';}
 function isDS(p){var d=parseDue(p.due);if(!d)return false;return (d-new Date())/86400000<=7&&(d-new Date())/86400000>=0&&p.status!=='done';}
 function parseDue(d){if(!d)return null;var r=new Date(d);return isNaN(r)?null:r;}
+function fmtDate(d){if(!d)return '';var p=(''+d).split('-');if(p.length!==3)return d;return p[2]+'/'+p[1]+'/'+p[0];}
 
 // ── SYNC STATUS ──
 function setSS(state,lbl){
@@ -958,7 +959,7 @@ function renderDash(){
           '<div class="tck" onclick="event.stopPropagation();toggleTask(\''+x.proj.id+'\',\''+t.id+'\')">'+'</div>'+
           '<div style="flex:1"><div class="ttx">'+h(t.title)+'</div>'+
           '<div style="display:flex;gap:6px;margin-top:3px">'+
-            '<span style="font-size:10px;color:var(--red);font-weight:600">Overdue · '+t.due+'</span>'+
+            '<span style="font-size:10px;color:var(--red);font-weight:600">Overdue · '+fmtDate(t.due)+'</span>'+
             '<span style="font-size:10px;color:var(--text4)">'+h(x.proj.name)+'</span>'+
             '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
           '</div></div></div>';
@@ -972,7 +973,7 @@ function renderDash(){
           '<div class="tck" onclick="event.stopPropagation();toggleTask(\''+x.proj.id+'\',\''+t.id+'\')">'+'</div>'+
           '<div style="flex:1"><div class="ttx">'+h(t.title)+'</div>'+
           '<div style="display:flex;gap:6px;margin-top:3px">'+
-            '<span style="font-size:10px;color:var(--blue)">📅 '+t.due+'</span>'+
+            '<span style="font-size:10px;color:var(--blue)">📅 '+fmtDate(t.due)+'</span>'+
             '<span style="font-size:10px;color:var(--text4)">'+h(x.proj.name)+'</span>'+
             '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
           '</div></div></div>';
@@ -1019,7 +1020,7 @@ function renderAttn(){
     var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':item.type==='task-overdue'?'🔶':'🟡';
     return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
       '<span class="alert-icon">'+ic+'</span>'+
-      '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+p.due:'')+'</div></div>'+
+      '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+fmtDate(p.due):'')+'</div></div>'+
       '<span class="alert-tag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
   }).join('')+'</div>';
 }
@@ -1053,7 +1054,7 @@ function projTable(projs){
     var e=ge(p.entity);var lm=gm(p.lead);
     var tt=p.tasks?p.tasks.length:0;var dn=p.tasks?p.tasks.filter(function(t){return t.done;}).length:0;
     var dueColor=isOD(p)?'var(--red)':isDS(p)?'var(--orange)':'var(--text3)';
-    var dueLbl=p.due?p.due:'—';
+    var dueLbl=p.due?fmtDate(p.due):'—';
     html+='<div class="proj-row" onclick="selectProj(\''+p.id+'\')">'+
       '<div><div class="pnm">'+(isOD(p)?'🔴 ':isDS(p)?'🟡 ':'')+h(p.name)+'</div><div class="psub">'+dn+'/'+tt+' tasks</div></div>'+
       '<div><span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>'+
@@ -1139,7 +1140,7 @@ function renderKanban(){
         '<div class="kcard-title">'+h(t.title)+'</div>'+
         '<div class="kcard-meta">'+
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
-          (t.due?'<span style="font-size:10px;color:'+(od?'var(--red)':'var(--text4)')+'">&#128197; '+t.due+'</span>':'')+
+          (t.due?'<span style="font-size:10px;color:'+(od?'var(--red)':'var(--text4)')+'">&#128197; '+fmtDate(t.due)+'</span>':'')+
           avs+
         '</div>'+
         '<div class="kcard-prog"><div class="kcard-pf" style="width:'+prog+'%;background:'+(prog===100?'var(--green)':prog>0?'var(--accent)':'var(--border2)')+'"></div></div>'+
@@ -1403,7 +1404,7 @@ function renderTasks(){
     var asgn=t.assignees&&t.assignees.length?t.assignees:(t.assign?[t.assign]:[]);
     var avs=asgn.slice(0,3).map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+';width:18px;height:18px;font-size:7px;margin-left:-3px;border:1px solid var(--bg2)" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('');
     var dueStr='';
-    if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<now;dueStr='<span class="task-due'+(od?' overdue':'')+'" style="font-size:10px">&#128197; '+(od?'Overdue · ':'')+t.due+'</span>';}
+    if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<now;dueStr='<span class="task-due'+(od?' overdue':'')+'" style="font-size:10px">&#128197; '+(od?'Overdue · ':'')+fmtDate(t.due)+'</span>';}
     var prog=t.done?100:(t.progress||0);
     var progColor=prog===100?'var(--green)':prog>=50?'var(--blue)':'var(--accent)';
     return '<div class="task-row at-row" onclick="selectProj(\'' +p.id+ '\')">' +
@@ -1601,7 +1602,7 @@ function openKickOff(pid){
     byMember[id].forEach(function(tt){breakdown+='  • '+tt+'\n';});
     breakdown+='\n';
   });
-  var due=p.due?('\nTarget completion: '+p.due):'';
+  var due=p.due?('\nTarget completion: '+fmtDate(p.due)):'';
   var portalLine='\n\nJump straight in here: '+PORTAL_URL;
   var defaultMsg='Hi team,\n\nWe\'re officially underway on "'+p.name+'"!'+due+'\n\nHere\'s what each of us is responsible for:\n\n'+breakdown+'Please review your tasks in ProjectOS and reach out if you have any questions.'+portalLine+'\n\nLet\'s do this.\n\nThanks,\nKevin';
   var noEmailNote=noEmail.length?'<div style="font-size:11px;color:var(--orange);margin-bottom:10px">⚠️ No email on file for: '+h(noEmail.join(', '))+' — they won\'t be included. Add their email in Team Members.</div>':'';
@@ -1743,7 +1744,7 @@ function renderDetail(p){
       '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+spill(p.status)+
     '</div>'+
     '<div class="dp-title">'+h(p.name)+'</div>'+
-    '<div class="dp-meta">Due: '+(p.due||'—')+' · '+p.priority+' priority</div></div>'+
+    '<div class="dp-meta">Due: '+(p.due?fmtDate(p.due):'—')+' · '+p.priority+' priority</div></div>'+
     '<button class="dp-close" onclick="closeDetail()" style="flex-shrink:0">✕</button>'+
     '</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;border-bottom:1px solid var(--border)">'+
@@ -1785,7 +1786,7 @@ function renderDetail(p){
       var avs=asgn.map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+';width:20px;height:20px;font-size:8px;margin-left:-3px;border:2px solid var(--bg2)" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('');
       var names=asgn.map(function(id){return gm(id).name.split(' ')[0];}).join(', ')||'Unassigned';
       var dueStr='';
-      if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<new Date();dueStr='<span class="task-due'+(od?' overdue':'')+'">📅 '+(od?'Overdue · ':'')+t.due+'</span>';}
+      if(t.due){var dd=new Date(t.due);var od=!t.done&&dd<new Date();dueStr='<span class="task-due'+(od?' overdue':'')+'">📅 '+(od?'Overdue · ':'')+fmtDate(t.due)+'</span>';}
       var remStr=(!t.done&&t.reminderDays!=null&&t.due)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">🔔 '+t.reminderDays+'d reminder</span>':'';
       var prog=t.progress||0;
       var pc=t.pri==='high'?'var(--red)':t.pri==='med'?'var(--orange)':'var(--green)';
