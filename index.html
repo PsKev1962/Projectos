@@ -1772,6 +1772,7 @@ function renderDetail(p){
       DB.members.map(function(m){return '<option value="'+m.id+'"'+(p.lead===m.id?' selected':'')+'>'+h(m.name)+'</option>';}).join('')+
       '</select></div>'+
   '</div>';
+  html+=projNotesLinksHTML(p);
   html+='<div class="dp-sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
     '<div class="dp-sec-title" style="margin:0">Tasks</div>'+
     '<button class="btn btn-primary" style="padding:10px 22px;font-size:14px;font-weight:700;background:var(--accent);color:#fff;border:2px solid var(--accent);border-radius:8px;cursor:pointer;box-shadow:0 2px 8px rgba(79,70,229,0.3)" onclick="openAddTask(\''+p.id+'\')">+ Add Task</button></div>';
@@ -1854,13 +1855,6 @@ function renderDetail(p){
   }
   html+='<button onclick="openAddTask(\''+p.id+'\')" style="display:block;width:100%;margin-top:10px;padding:12px;font-size:14px;font-weight:700;color:var(--accent);background:transparent;border:2px dashed var(--accent);border-radius:8px;cursor:pointer;text-align:center;transition:background .15s">+ Add Task</button>';
   html+='</div>';
-  var notes=p.notes||[];
-  html+='<div class="dp-sec"><div class="dp-sec-title">Notes</div>'+
-    '<div class="note-list">'+notes.slice().reverse().map(function(n){
-      return '<div class="note-item"><span class="note-who">'+h(n.who)+'</span><span class="note-when">'+h(n.when)+'</span><div class="note-txt">'+h(n.text)+'</div></div>';
-    }).join('')+(notes.length===0?'<div style="font-size:12px;color:var(--text4)">No notes yet</div>':'')+'</div>'+
-    '<textarea class="note-area" id="note-ta-'+p.id+'" placeholder="Add a note..."></textarea>'+
-    '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;margin-top:6px" onclick="addNote(\''+p.id+'\')">Add Note</button></div></div>';
   dp.innerHTML=html;
   var newBody=dp.querySelector('.dp-body');
   if(newBody)newBody.scrollTop=prevScroll;
@@ -2397,6 +2391,51 @@ function addNote(pid){
   if(ST.viewAs!=='all'){var wn=gm(ST.viewAs);if(wn&&wn.name)whoNote=wn.name;}
   p.notes.push({who:whoNote,when:new Date().toLocaleString(),text:ta.value.trim()});
   renderDetail(p);mutate();toast('Note saved','ok');
+}
+
+// ── PROJECT NOTES & LINKS (sits under Status/Entity/Lead) ──
+function projNotesLinksHTML(p){
+  var notes=p.notes||[];
+  var docs=p.docs||[];
+  var html='<div class="dp-sec"><div class="dp-sec-title">Project Notes &amp; Links</div>';
+  // notes
+  html+='<div class="note-list">'+notes.slice().reverse().map(function(n){
+      return '<div class="note-item"><span class="note-who">'+h(n.who)+'</span><span class="note-when">'+h(n.when)+'</span><div class="note-txt">'+h(n.text)+'</div></div>';
+    }).join('')+(notes.length===0?'<div style="font-size:12px;color:var(--text4)">No notes yet</div>':'')+'</div>'+
+    '<textarea class="note-area" id="note-ta-'+p.id+'" placeholder="Add a comment..."></textarea>'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;margin-top:6px" onclick="addNote(\''+p.id+'\')">Add Comment</button>';
+  // links & documents
+  html+='<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text4);margin-bottom:6px">&#128279; Links &amp; Documents</div>';
+  html+='<div style="font-size:10px;color:var(--text4);margin-bottom:8px;line-height:1.4">Paste links to files in your Google Drive &quot;Project Management Files&quot; folder, or any shareable link.</div>';
+  if(docs.length){
+    html+=docs.map(function(d,i){
+      return '<div style="font-size:12px;margin-bottom:4px;display:flex;justify-content:space-between;gap:6px">'+
+        '<a href="'+h(d.url)+'" target="_blank" style="color:var(--accent);flex:1;word-break:break-all">&#128279; '+h(d.label||d.url)+'</a>'+
+        '<span class="proof-del" style="cursor:pointer;color:var(--red)" onclick="delProjLink(\''+p.id+'\','+i+')">&#10005;</span>'+
+      '</div>';
+    }).join('');
+  }
+  html+='<div style="display:flex;gap:6px;margin-top:4px">'+
+    '<input class="fi" id="pjll-'+p.id+'" placeholder="Link label (optional)" style="font-size:12px;padding:6px 8px;max-width:160px">'+
+    '<input class="fi" id="pjlu-'+p.id+'" placeholder="Paste link" style="font-size:12px;padding:6px 8px" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addProjLink(\''+p.id+'\')}">'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:6px 10px;flex-shrink:0" onclick="addProjLink(\''+p.id+'\')">Attach</button>'+
+  '</div></div></div>';
+  return html;
+}
+function addProjLink(pid){
+  var p=gp(pid);if(!p)return;
+  var uel=document.getElementById('pjlu-'+pid);
+  var lel=document.getElementById('pjll-'+pid);
+  if(!uel||!uel.value.trim())return;
+  var label=lel&&lel.value.trim()?lel.value.trim():('Link '+((p.docs||[]).length+1));
+  if(!p.docs)p.docs=[];
+  p.docs.push({url:uel.value.trim(),label:label});
+  renderDetail(p);mutate();toast('Link attached','ok');
+}
+function delProjLink(pid,idx){
+  var p=gp(pid);if(!p||!p.docs)return;
+  p.docs.splice(idx,1);
+  renderDetail(p);mutate();
 }
 
 function delProj(pid){
