@@ -2936,11 +2936,8 @@ function renderSendLink(){
   if(!docList) docList='<div style="color:var(--text3);font-size:13px;padding:10px 0;">No documents saved yet. Add one below.</div>';
   var preview=buildSLPreview();
   var prevHtml='<div class="sl-card"><span class="sl-label">Message Preview</span>';
-  if(preview){
-    prevHtml+='<div class="sl-preview" id="sl-preview-text">'+h(preview)+'</div>';
-  } else {
-    prevHtml+='<div class="sl-preview" id="sl-preview-text" style="color:var(--text3);font-size:13px;padding:10px 0;">Fill in recipient details and select a document above to preview the message.</div>';
-  }
+  window._slMsgEdited=false;
+  prevHtml+='<textarea class="sl-preview" id="sl-preview-text" oninput="window._slMsgEdited=true" placeholder="Fill in recipient details and select a document above to preview the message." style="width:100%;box-sizing:border-box;min-height:170px;resize:vertical;font-family:inherit;">'+h(preview)+'</textarea>';
   prevHtml+='<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">';
   prevHtml+='<button class="sl-btn sl-btn-email" onclick="sendSLEmail()">&#9993; Send Email</button>';
   prevHtml+='';
@@ -3007,7 +3004,7 @@ function refreshSLPreview(){
   if(odLabelEl)window._slOdLabel=odLabelEl.value;
   if(odUrlEl)window._slOdUrl=odUrlEl.value;
   var prev=document.getElementById('sl-preview-text');
-  if(prev)prev.textContent=buildSLPreview();
+  if(prev&&!window._slMsgEdited){if('value' in prev){prev.value=buildSLPreview();}else{prev.textContent=buildSLPreview();}}
 }
 
 function addDoc(){
@@ -3057,7 +3054,8 @@ function getSLFields(){
 function sendSLEmail(){
   var f=getSLFields();
   if(!f.email){alert('Please enter an email address.');return;}
-  var body=buildSLPreview();
+  var prevEl=document.getElementById('sl-preview-text');
+  var body=(prevEl&&typeof prevEl.value!=='undefined'&&prevEl.value.replace(/\s/g,''))?prevEl.value:buildSLPreview();
   if(!body){alert('Please select a document or enter a once-off document link first.');return;}
   var odLabel=(document.getElementById('sl-onceoff-label')||{}).value||(window._slOdLabel||'');
   var subj=window._selDoc?window._selDoc.label:(odLabel||'Document Link');
