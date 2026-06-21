@@ -2588,6 +2588,7 @@ function notifyTaskComplete(p, t){
       '<p style="background:#f0fdf4;border:1px solid #22c55e;border-radius:8px;padding:12px 14px;margin:10px 0">'+
         '<strong style="font-size:15px">&#9989; '+h(t.title)+'</strong><br>'+
         'Project: '+h(p.name)+
+        (t.notes?'<br><span style="color:#555">Notes: '+h(t.notes)+'</span>':'')+
       '</p>'+
       '<p>Your work is appreciated.</p>'+
       '<p style="color:#888;font-size:12px;margin-top:18px">&mdash; ProjectOS &middot; The Junction<br>Bless Ya Heaps, Ps Kev</p>'+
