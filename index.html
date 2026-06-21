@@ -714,7 +714,7 @@ function loadData(cb){
     });
     DB.projects = projects.map(function(p){
       var ptasks = tasks.filter(function(t){return t.project_id===p.id;}).map(function(t){
-        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', subtasks:t.subtasks||[], proofs:t.proofs||[]};
+        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', notes:t.notes||'', subtasks:t.subtasks||[], proofs:t.proofs||[]};
       });
       return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
     });
@@ -745,7 +745,7 @@ function saveData(cb){
   DB.projects.forEach(function(p){
     projectRows.push({id:p.id, name:p.name, description:p.desc||'', status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due_date:p.due||null, lead:p.lead||null, members:p.members||[], notes:p.notes||[], docs:p.docs||[], entity_id:p.entity||null});
     (p.tasks||[]).forEach(function(t){
-      taskRows.push({id:t.id, title:t.title, description:t.desc||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], project_id:p.id, entity_id:p.entity||null});
+      taskRows.push({id:t.id, title:t.title, description:t.desc||'', notes:t.notes||'', status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], project_id:p.id, entity_id:p.entity||null});
     });
   });
   var slDocRows = (DB.pdfDocs||[]).map(function(d){
@@ -1838,6 +1838,7 @@ function renderDetail(p){
                 ((!asgn.length&&t.assignNote)?'<span style="font-size:10px;color:var(--text4);margin-left:4px">Suggested: '+h(t.assignNote)+'</span>':'')+
               '</div>'+
               (t.docUrl?'<div style="margin:4px 0 6px"><a href="'+h(t.docUrl)+'" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">&#128196; '+h(t.docLabel||'View Document')+'</a></div>':'')+
+              (t.notes?'<div style="margin:4px 0 6px;font-size:12px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:6px 8px;line-height:1.45">'+h(t.notes)+'</div>':'')+
               taskEmailAllBtn(asgn,t.title,p.name,t.docUrl,t.docLabel)+
             '</div>'+
             '<div class="task-prog-wrap">'+
