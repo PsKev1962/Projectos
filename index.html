@@ -359,9 +359,47 @@ a:visited{color:var(--accent);}
   .page-header{padding:12px 14px 8px!important;}
   .main-inner{padding:0!important;}
 }
+
+/* ── LOGIN GATE ── */
+#login-gate{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
+  display:none;align-items:center;justify-content:center;
+  background:var(--bg);
+}
+.login-box{
+  width:90%;max-width:340px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow2);padding:32px 28px;text-align:center;
+}
+.login-logo{
+  width:48px;height:48px;border-radius:12px;background:var(--accent);color:#fff;
+  font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+}
+.login-title{font-size:18px;font-weight:700;color:var(--text);}
+.login-sub{font-size:13px;color:var(--text3);margin:4px 0 20px;}
+.login-box .fi{width:100%;text-align:center;font-size:15px;}
 </style>
 </head>
 <body>
+<div id="login-gate">
+  <div class="login-box">
+    <div class="login-logo">P</div>
+    <div class="login-title">ProjectOS</div>
+    <div class="login-sub">Sign in to continue</div>
+    <div id="login-step-email">
+      <input class="fi" id="login-email" type="email" placeholder="you@ourchurch.org.au" autocomplete="email">
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="loginSendCode()">Send me a code</button>
+    </div>
+    <div id="login-step-code" style="display:none;">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:8px;" id="login-code-sentto"></div>
+      <input class="fi" id="login-code" type="text" inputmode="numeric" placeholder="6-digit code" maxlength="6">
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="loginVerifyCode()">Verify &amp; sign in</button>
+      <div style="text-align:center;margin-top:10px;"><a href="#" style="font-size:12px;color:var(--text3);" onclick="loginBackToEmail();return false;">Use a different email</a></div>
+    </div>
+    <div id="login-error" style="display:none;color:var(--red);font-size:13px;margin-top:10px;"></div>
+    <div id="login-loading" style="display:none;font-size:13px;color:var(--text3);margin-top:10px;">Working...</div>
+  </div>
+</div>
 <div id="pos-root">
 
   <div id="topbar">
@@ -372,6 +410,8 @@ a:visited{color:var(--accent);}
     </div>
     <div class="topbar-right">
       <div class="sync-pill"><div class="sync-dot" id="sync-dot"></div><span id="sync-lbl">Loading</span></div>
+      <span id="login-who" style="font-size:11px;color:var(--text4);margin-right:2px;"></span>
+      <button class="tb-btn" onclick="logout()">Logout</button>
       <div id="viewas-wrap" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text4)"><span>👤</span></div>
       <button class="tb-btn" onclick="doSync()">💾 Save</button>
       <button class="tb-btn tb-hide-mobile" onclick="exportData()">⬇ Export</button>
@@ -427,6 +467,131 @@ a:visited{color:var(--accent);}
 var SUPABASE_URL = 'https://zybjazzlfahpriiwalnu.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp5YmphenpsZmFocHJpaXdhbG51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDA4NTksImV4cCI6MjA5NzIxNjg1OX0.XmyOArP-zPdlT3zHorsVGMZaldN45NlH5ZgtmSMHYfY';
 var SB_HEADERS = {'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+
+// ── AUTH (Supabase email OTP — passwordless 6-digit code) ──
+var SB_SESSION = null;
+var _loginEmail = '';
+function authToken(){ return (SB_SESSION && SB_SESSION.access_token) ? SB_SESSION.access_token : SUPABASE_KEY; }
+function saveSession(s){ SB_SESSION = s; try{ localStorage.setItem('pos_session', JSON.stringify(s)); }catch(e){} }
+function clearSession(){ SB_SESSION = null; try{ localStorage.removeItem('pos_session'); }catch(e){} }
+function loadStoredSession(){
+  try{
+    var raw = localStorage.getItem('pos_session');
+    if(!raw) return null;
+    var s = JSON.parse(raw);
+    if(!s || !s.access_token) return null;
+    return s;
+  }catch(e){ return null; }
+}
+function sbAuthSendCode(email, cb, errcb){
+  fetch(SUPABASE_URL+'/auth/v1/otp', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+    body:JSON.stringify({email:email, create_user:false})
+  }).then(function(r){
+    if(r.ok){ cb&&cb(); return; }
+    return r.json().then(function(j){ errcb&&errcb((j&&(j.msg||j.error_description))||'Could not send code'); });
+  }).catch(function(e){ errcb&&errcb('Network error sending code'); });
+}
+function sbAuthVerifyCode(email, code, cb, errcb){
+  fetch(SUPABASE_URL+'/auth/v1/verify', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+    body:JSON.stringify({email:email, token:code, type:'email'})
+  }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+  .then(function(res){
+    if(res.ok && res.body && res.body.access_token){
+      saveSession({access_token:res.body.access_token, refresh_token:res.body.refresh_token, email:email, expires_at: Date.now() + ((res.body.expires_in||3600)*1000)});
+      cb&&cb();
+    } else {
+      errcb&&errcb((res.body&&(res.body.msg||res.body.error_description))||'Incorrect or expired code');
+    }
+  }).catch(function(e){ errcb&&errcb('Network error verifying code'); });
+}
+function sbAuthRefresh(cb, errcb){
+  var s = SB_SESSION;
+  if(!s || !s.refresh_token){ errcb&&errcb(); return; }
+  fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+    body:JSON.stringify({refresh_token:s.refresh_token})
+  }).then(function(r){ return r.json().then(function(j){return {ok:r.ok, body:j};}); })
+  .then(function(res){
+    if(res.ok && res.body && res.body.access_token){
+      saveSession({access_token:res.body.access_token, refresh_token:res.body.refresh_token, email:s.email, expires_at: Date.now() + ((res.body.expires_in||3600)*1000)});
+      cb&&cb();
+    } else { errcb&&errcb(); }
+  }).catch(function(e){ errcb&&errcb(); });
+}
+function logout(){ clearSession(); location.reload(); }
+
+function loginShowError(msg){ var e=document.getElementById('login-error'); if(e){ e.textContent = msg; e.style.display = 'block'; } }
+function loginClearError(){ var e=document.getElementById('login-error'); if(e){ e.style.display='none'; e.textContent=''; } }
+function loginSetLoading(on){ var l=document.getElementById('login-loading'); if(l) l.style.display = on?'block':'none'; }
+function loginSendCode(){
+  loginClearError();
+  var inp = document.getElementById('login-email');
+  var email = inp ? inp.value.trim() : '';
+  if(!email || email.indexOf('@')===-1){ loginShowError('Enter a valid email address'); return; }
+  _loginEmail = email;
+  loginSetLoading(true);
+  sbAuthSendCode(email, function(){
+    loginSetLoading(false);
+    document.getElementById('login-step-email').style.display='none';
+    document.getElementById('login-step-code').style.display='block';
+    document.getElementById('login-code-sentto').textContent = 'Code sent to '+email;
+  }, function(msg){
+    loginSetLoading(false);
+    loginShowError(msg || "That email isn't recognised — check with Ps Kev.");
+  });
+}
+function loginVerifyCode(){
+  loginClearError();
+  var inp = document.getElementById('login-code');
+  var code = inp ? inp.value.trim() : '';
+  if(!code){ loginShowError('Enter the code from your email'); return; }
+  loginSetLoading(true);
+  sbAuthVerifyCode(_loginEmail, code, function(){
+    loginSetLoading(false);
+    startApp();
+  }, function(msg){
+    loginSetLoading(false);
+    loginShowError(msg || 'Incorrect or expired code');
+  });
+}
+function loginBackToEmail(){
+  loginClearError();
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
+}
+function showLoginGate(){
+  document.getElementById('login-gate').style.display='flex';
+  document.getElementById('pos-root').style.display='none';
+}
+function hideLoginGate(){
+  document.getElementById('login-gate').style.display='none';
+  document.getElementById('pos-root').style.display='';
+  var who=document.getElementById('login-who');
+  if(who) who.textContent = (SB_SESSION&&SB_SESSION.email) || '';
+}
+function startApp(){
+  hideLoginGate();
+  loadViewAs();
+  defaults();
+  renderAll();
+  renderViewAsPill();
+  loadData(function(){ renderAll(); renderViewAsPill(); });
+}
+function initAuth(){
+  var s = loadStoredSession();
+  if(!s){ showLoginGate(); return; }
+  SB_SESSION = s;
+  if(s.expires_at && Date.now() < s.expires_at - 60000){
+    startApp();
+  } else {
+    sbAuthRefresh(function(){ startApp(); }, function(){ clearSession(); showLoginGate(); });
+  }
+}
 
 var COLORS = ['#4f46e5','#22c55e','#f97316','#ef4444','#3b82f6','#eab308','#8b5cf6','#14b8a6'];
 var TASK_CATEGORIES = ['Strategy','Design','Development','Content','Marketing','Operations','Planning','QA / Testing','Launch','Discipleship','Support','Admin'];
@@ -499,6 +664,7 @@ function sbFetch(path, opts){
   var mergedHeaders = {};
   var k;
   for(k in SB_HEADERS) { mergedHeaders[k] = SB_HEADERS[k]; }
+  mergedHeaders['Authorization'] = 'Bearer '+authToken();
   for(k in extraHeaders) { mergedHeaders[k] = extraHeaders[k]; }
   options.headers = mergedHeaders;
   return fetch(SUPABASE_URL + '/rest/v1/' + path, options);
@@ -2539,12 +2705,8 @@ function taskEmailAllBtn(asgnIds,taskTitle,projName,docLink,docLabel){
   return '<div class="contact-btns"><button class="cbtn cbtn-email" onclick="openCLink(this)" data-url="'+encodeURIComponent(_emailUrl)+'">'+label+'</button></div>';
 }
 
-// Always load from Supabase on startup — never trust localStorage as primary
-loadViewAs();
-defaults();
-renderAll();
-renderViewAsPill();
-loadData(function(){ renderAll(); renderViewAsPill(); });
+// App only boots after a valid session is confirmed — see initAuth()
+initAuth();
 
 function renderSendLink(){
   var docs = DB.pdfDocs || [];
