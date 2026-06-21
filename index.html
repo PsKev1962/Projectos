@@ -2988,9 +2988,11 @@ function buildSLPreview(){
   var doc=window._selDoc;
   var odLabel=(document.getElementById('sl-onceoff-label')||{}).value||(window._slOdLabel||'');
   var odUrl=(document.getElementById('sl-onceoff-url')||{}).value||(window._slOdUrl||'');
-  var hasDoc=doc||(odLabel&&odUrl);
-  if(!hasDoc)return '';
-  var docLine=doc?(doc.label+'\n'+doc.url):(odLabel+'\n'+odUrl);
+  var blocks=[];
+  if(doc&&doc.url)blocks.push((doc.label?doc.label+'\n':'')+doc.url);
+  if(odUrl)blocks.push((odLabel?odLabel+'\n':'')+odUrl);
+  if(!blocks.length)return '';
+  var docLine=blocks.join('\n\n');
   return 'Hi '+name+',\n\nGreat connecting with you today! Here is the document you were after:\n\n'+docLine+'\n\nPlease do not hesitate to get in touch if you have any questions.\n\nWarm regards,\nThe Team';
 }
 
