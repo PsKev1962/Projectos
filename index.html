@@ -890,6 +890,14 @@ function fps(){
   if(ST.entity)p=p.filter(function(x){return x.entity===ST.entity;});
   if(ST.fstat!=='all'&&ST.fstat!=='open'&&ST.fstat!=='done2')p=p.filter(function(x){return x.status===ST.fstat;});
   if(ST.search)p=p.filter(function(x){return x.name.toLowerCase().indexOf(ST.search.toLowerCase())>-1;});
+  p=p.slice().sort(function(a,b){
+    var da=a.due?new Date(a.due):null;
+    var db=b.due?new Date(b.due):null;
+    if(!da&&!db)return 0;
+    if(!da)return 1;
+    if(!db)return -1;
+    return da-db;
+  });
   return p;
 }
 
