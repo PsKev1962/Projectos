@@ -824,6 +824,7 @@ function renderAll(){
 function setView(v){
   if(v!=='squarespace'){ ST.sqUnlocked=false; }
   ST.view=v;ST.project=null;
+  if(v==='dashboard'){ ST.entity=null; }
   document.querySelectorAll('.nav-item').forEach(function(el){el.classList.remove('active');});
   var a=document.querySelector('[data-view="'+v+'"]');if(a)a.classList.add('active');
   var dp=document.getElementById('detail-panel');if(dp){dp.classList.add('hidden');dp.innerHTML='';}
