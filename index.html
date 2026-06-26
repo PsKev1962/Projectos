@@ -2818,6 +2818,7 @@ function deleteTask(pid,tid){
   if(ST.viewAs!==p.lead){alert('Only the Project Lead ('+gm(p.lead).name+') can delete tasks. Select your name from the top-right dropdown if that\'s you.');return;}
   if(!confirm('Delete task "'+t.title+'"? This cannot be undone.'))return;
   p.tasks=p.tasks.filter(function(x){return x.id!==tid;});
+  sbFetch('tasks?id=eq.'+encodeURIComponent(tid),{method:'DELETE'}).catch(function(err){console.error('task delete error',err);});
   if(ST.project===pid)renderDetail(p);
   mutate();toast('Task deleted','ok');
 }
