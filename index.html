@@ -267,6 +267,9 @@ html,body{margin:0!important;padding:0!important;overflow:hidden!important;heigh
 .task-comment-text{margin-top:3px;color:var(--text2);line-height:1.5;}
 .task-comment-input{width:100%;border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-size:12px;font-family:inherit;resize:none;min-height:50px;background:var(--bg);}
 .task-comment-input:focus{outline:none;border-color:var(--accent);}
+.tc-mention-drop{position:absolute;background:var(--bg2);border:1px solid var(--border);border-radius:6px;box-shadow:var(--shadow2);z-index:9999;min-width:180px;max-height:150px;overflow-y:auto;display:none;}
+.tc-mention-item{padding:7px 12px;cursor:pointer;font-size:12px;color:var(--text);}
+.tc-mention-item:hover{background:var(--bg3);}
 /* ── Active blue links ── */
 a{color:var(--accent);text-decoration:none;}
 a:hover{text-decoration:underline;color:var(--accent2);}
@@ -2129,7 +2132,9 @@ function taskCommentsHTML(pid, t){
     }).join('');
   }
   html+='<div style="margin-top:6px">'+
-    '<textarea class="task-comment-input" id="tc-'+t.id+'" placeholder="Add a comment..."></textarea>'+
+    '<div style="position:relative">'+
+    '<textarea class="task-comment-input" id="tc-'+t.id+'" placeholder="Add a comment... (type @ to mention someone)" oninput="tcMentionInput(this,\''+t.id+'\')" onblur="tcHideMention(\''+t.id+'\')"></textarea>'+
+    '</div>'+
     '<div style="display:flex;gap:6px;margin-top:4px;align-items:center">'+
       '<input id="tcl-'+t.id+'" placeholder="Link label (optional)" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--bg);color:var(--text)" />'+
       '<input id="tcu-'+t.id+'" placeholder="Paste link (optional)" style="flex:2;min-width:0;border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:11px;font-family:inherit;background:var(--bg);color:var(--text)" />'+
@@ -2139,6 +2144,50 @@ function taskCommentsHTML(pid, t){
     '</div>'+
     '</div>';
   return html;
+}
+
+function tcMentionInput(el, tid){
+  var val=el.value;
+  var pos=el.selectionStart;
+  var before=val.substring(0,pos);
+  var match=before.match(/@(\w*)$/);
+  if(!match){tcHideMention(tid);return;}
+  var query=match[1].toLowerCase();
+  var members=DB.members.filter(function(m){
+    return !query||m.name.toLowerCase().indexOf(query)===0;
+  });
+  if(!members.length){tcHideMention(tid);return;}
+  var drop=document.getElementById('tcm-'+tid);
+  if(!drop){
+    drop=document.createElement('div');
+    drop.id='tcm-'+tid;
+    drop.className='tc-mention-drop';
+    el.parentNode.appendChild(drop);
+  }
+  drop.innerHTML=members.slice(0,5).map(function(m){
+    var firstName=m.name.split(' ')[0];
+    return '<div class="tc-mention-item" onmousedown="tcMentionSelect(\''+tid+'\',\''+firstName+'\')">@'+h(m.name)+'</div>';
+  }).join('');
+  drop.style.display='block';
+}
+
+function tcHideMention(tid){
+  var drop=document.getElementById('tcm-'+tid);
+  if(drop)drop.style.display='none';
+}
+
+function tcMentionSelect(tid, firstName){
+  var el=document.getElementById('tc-'+tid);
+  if(!el)return;
+  var val=el.value;
+  var pos=el.selectionStart;
+  var before=val.substring(0,pos);
+  var after=val.substring(pos);
+  var newBefore=before.replace(/@\w*$/,'@'+firstName+' ');
+  el.value=newBefore+after;
+  el.focus();
+  el.selectionStart=el.selectionEnd=newBefore.length;
+  tcHideMention(tid);
 }
 
 function editTaskComment(pid,tid,idx){
@@ -2192,6 +2241,30 @@ function addTaskComment(pid, tid){
   };
   if(linkUrl)cmt.link={url:linkUrl,label:linkLabel||'Open link'};
   t.comments.push(cmt);
+  if(text){
+    var mentRe=/@(\w+)/g;
+    var mentMatch;
+    var notified={};
+    while((mentMatch=mentRe.exec(text))!==null){
+      var fn=mentMatch[1].toLowerCase();
+      var mnt=null;
+      for(var mi=0;mi<DB.members.length;mi++){
+        if(DB.members[mi].name.split(' ')[0].toLowerCase()===fn&&DB.members[mi].email){mnt=DB.members[mi];break;}
+      }
+      if(mnt&&!notified[mnt.id]){
+        notified[mnt.id]=true;
+        sendEmail(
+          mnt.email,
+          'You were mentioned in a ProjectOS task',
+          '<p>Hi '+h(mnt.name.split(' ')[0])+',</p>'+
+          '<p><strong>'+h(whoName)+'</strong> mentioned you in a comment on task <strong>'+h(t.title)+'</strong> ('+h(p.name)+'):</p>'+
+          '<blockquote style="border-left:3px solid #4f46e5;padding-left:12px;color:#374151;margin:12px 0">'+h(text)+'</blockquote>'+
+          '<p><a href="https://thejunctiongc.com/portal" style="color:#4f46e5">Log in to view the task &rarr;</a></p>'+
+          '<p>Blessings,<br>The ProjectOS Team</p>'
+        );
+      }
+    }
+  }
   if(ta)ta.value='';
   if(lblEl)lblEl.value='';
   if(urlEl)urlEl.value='';
