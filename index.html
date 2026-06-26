@@ -1014,8 +1014,8 @@ function renderDash(){
       '<div class="av-row">'+ms.slice(0,5).map(function(id){var m=gm(id);return '<div class="av" style="background:'+m.color+'" title="'+h(m.name)+'">'+h(m.initials)+'</div>';}).join('')+'</div></div>';
   }).join('')+'</div>';
   }
-  html+='<div class="section-header"><div class="section-title">'+(ST.viewAs!=='all'?'Your Projects':'Recent Projects')+'</div><span class="section-link" onclick="setView(\'projects\')">View all →</span></div>';
-  html+=projTable(p.slice(0,5));
+  html+='<div class="section-header"><div class="section-title">'+(ST.viewAs!=='all'?'Your Projects':'Upcoming Projects')+'</div><span class="section-link" onclick="setView(\'projects\')">View all →</span></div>';
+  html+=projTable(p.filter(function(x){return x.status!=='done';}).slice(0,5));
   return html;
 }
 
@@ -1043,7 +1043,7 @@ function renderProjs(){
   html+='<div class="task-filters">'+['all','active','planning','hold','risk','done'].map(function(s){
     return '<button class="fb'+(ST.fstat===s?' active':'')+'" onclick="ST.fstat=\''+s+'\';renderAll()">'+s.charAt(0).toUpperCase()+s.slice(1)+'</button>';
   }).join('')+'</div>';
-  html+='<div id="proj-table-wrap">'+(p.length?projTable(p):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>')+'</div>';
+  html+='<div id="proj-table-wrap">'+(p.length?(ST.fstat==='all'?projGrouped(p):projTable(p)):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>')+'</div>';
   return html;
 }
 
@@ -1051,11 +1051,22 @@ function renderProjList(){
   var wrap=document.getElementById('proj-table-wrap');
   if(!wrap){renderAll();return;}
   var p=fps();
-  wrap.innerHTML=p.length?projTable(p):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>';
+  wrap.innerHTML=p.length?(ST.fstat==='all'?projGrouped(p):projTable(p)):'<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects found</div></div>';
   updateBadges();
 }
 
 
+function projGrouped(projs){
+  var order=['active','planning','hold','risk','done'];
+  var labels={active:'Active',planning:'Planning',hold:'Hold',risk:'Risk',done:'Done'};
+  var html='';
+  order.forEach(function(st){
+    var grp=projs.filter(function(x){return x.status===st;});
+    if(!grp.length)return;
+    html+='<div style="font-size:13px;font-weight:700;color:var(--text2);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.04em">'+labels[st]+' ('+grp.length+')</div>'+projTable(grp);
+  });
+  return html;
+}
 function projTable(projs){
   if(!projs.length)return '<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No projects</div></div>';
   var html='<div class="proj-table"><div class="proj-thead"><span>Project</span><span>Entity</span><span>Status</span><span>Priority</span><span>Lead</span><span>Due Date</span><span>Progress</span><span></span></div>';
