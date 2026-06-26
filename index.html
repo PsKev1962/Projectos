@@ -1127,6 +1127,7 @@ function renderKanban(){
   var allTasks=[];
   var viewMember=ST.viewAs!=='all'?ST.viewAs:null;
   fps().forEach(function(pr){
+    if(pr.status==='done')return;
     if(!pr.tasks)return;
     pr.tasks.forEach(function(t){
       if(viewMember){
