@@ -1191,7 +1191,7 @@ function renderKanban(){
         ' data-pid="'+p.id+'" data-tid="'+t.id+'"'+
         ' ondragstart="kbDragStart(this)"'+
         ' ondragend="kbDragEnd(this)"'+
-        ' onclick="selectProj(\''+p.id+'\')">'+
+        ' onclick="selectProjTask(\''+p.id+'\',\''+t.id+'\')">'+
         '<div class="kcard-title">'+h(t.title)+'</div>'+
         '<div class="kcard-meta">'+
           '<span class="etag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span>'+
@@ -1776,6 +1776,18 @@ function selectProj(id){
   renderDetail(p);
 }
 
+function selectProjTask(pid, tid){
+  selectProj(pid);
+  setTimeout(function(){
+    var el=document.getElementById('tcard-'+tid);
+    if(el){
+      var body=el.closest('.dp-body');
+      if(body){body.scrollTop=el.offsetTop-10;}
+      else{el.scrollIntoView({behavior:'smooth',block:'start'});}
+    }
+  }, 250);
+}
+
 function renderDetail(p){
   var dp=document.getElementById('detail-panel');if(!dp)return;
   var prevBody=dp.querySelector('.dp-body');
@@ -1869,7 +1881,7 @@ function renderDetail(p){
           '<span>'+subDoneCount+'/'+t.subtasks.length+' sub-tasks done — finish them all to sign off</span>'+
         '</div>';
       }
-      return '<div class="task-card">'+
+      return '<div class="task-card" id="tcard-'+t.id+'">'+
         '<div class="task-card-top">'+
           '<div class="task-card-body">'+
             '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:2px">'+
