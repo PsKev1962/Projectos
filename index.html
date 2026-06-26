@@ -2513,6 +2513,8 @@ function delProjLink(pid,idx){
 function delProj(pid){
   if(!confirm('Delete this project? This cannot be undone.'))return;
   DB.projects=DB.projects.filter(function(p){return p.id!==pid;});
+  sbFetch('tasks?project_id=eq.'+encodeURIComponent(pid),{method:'DELETE'}).catch(function(err){console.error('task delete error',err);});
+  sbFetch('projects?id=eq.'+encodeURIComponent(pid),{method:'DELETE'}).catch(function(err){console.error('project delete error',err);});
   closeDetail();
   mutate();
   renderAll();
