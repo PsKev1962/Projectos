@@ -715,7 +715,7 @@ function loadData(cb){
     });
     DB.projects = projects.map(function(p){
       var ptasks = tasks.filter(function(t){return t.project_id===p.id;}).map(function(t){
-        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', notes:t.notes||'', thankedAt:t.thanked_at||null, subtasks:t.subtasks||[], proofs:t.proofs||[]};
+        return {id:t.id, title:t.title, cat:t.category||'', pri:t.priority||'med', done:t.status==='done', assign:t.assignees&&t.assignees[0]||'', assignees:t.assignees||[], progress:t.progress||0, due:t.due_date||'', comments:t.comments||[], links:t.links||[], status:t.status||'todo', desc:t.description||'', notes:t.notes||'', thankedAt:t.thanked_at||null, subtasks:t.subtasks||[], proofs:t.proofs||[], createdBy:t.created_by||''};
       });
       return {id:p.id, name:p.name, entity:p.entity_id, status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due:p.due_date||'', lead:p.lead||'', members:p.members||[], desc:p.description||'', tasks:ptasks, notes:p.notes||[], docs:p.docs||[]};
     });
@@ -746,7 +746,7 @@ function saveData(cb){
   DB.projects.forEach(function(p){
     projectRows.push({id:p.id, name:p.name, description:p.desc||'', status:p.status||'active', priority:p.priority||'med', progress:p.progress||0, due_date:p.due||null, lead:p.lead||null, members:p.members||[], notes:p.notes||[], docs:p.docs||[], entity_id:p.entity||null});
     (p.tasks||[]).forEach(function(t){
-      taskRows.push({id:t.id, title:t.title, description:t.desc||'', notes:t.notes||'', thanked_at:t.thankedAt||null, status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], project_id:p.id, entity_id:p.entity||null});
+      taskRows.push({id:t.id, title:t.title, description:t.desc||'', notes:t.notes||'', thanked_at:t.thankedAt||null, status:t.done?'done':(t.status||'todo'), priority:t.pri||'med', category:t.cat||'', progress:t.progress||0, due_date:t.due||null, assignees:t.assignees||[t.assign].filter(Boolean), comments:t.comments||[], links:t.links||[], subtasks:t.subtasks||[], proofs:t.proofs||[], createdBy:t.createdBy||'', created_by:t.createdBy||null, project_id:p.id, entity_id:p.entity||null});
     });
   });
   var slDocRows = (DB.pdfDocs||[]).map(function(d){
@@ -2714,7 +2714,7 @@ function openAddTask(pid){
     var cbs=document.querySelectorAll('.nt-assign-cb:checked');
     var assignees=Array.prototype.slice.call(cbs).map(function(cb){return cb.value;});
     if(!p.tasks)p.tasks=[];
-    var creatorName=ST.viewAs!=='all'?gm(ST.viewAs).name:'Team';
+    var meEmail=(SB_SESSION&&SB_SESSION.email)||'';var meMember=meEmail?DB.members.filter(function(m){return m.email&&m.email.toLowerCase()===meEmail.toLowerCase();})[0]:null;var creatorName=meMember?meMember.name:(ST.viewAs!=='all'?gm(ST.viewAs).name:(meEmail||'Team'));
     var newTask={
       id:uid(),
       title:title,
