@@ -1019,19 +1019,53 @@ function renderDash(){
   return html;
 }
 
+function getAttnTasks(){
+  var r=[];var now=new Date();
+  DB.projects.forEach(function(p){
+    if(p.status==='done')return;
+    if(!p.tasks)return;
+    p.tasks.forEach(function(t){
+      if(t.done||!t.due)return;
+      var d=parseDue(t.due);if(!d)return;
+      var diff=(d-now)/86400000;
+      if(d<now)r.push({task:t,proj:p,type:'overdue',sev:'high'});
+      else if(diff<=7)r.push({task:t,proj:p,type:'soon',sev:'med'});
+    });
+  });
+  r.sort(function(a,b){return parseDue(a.task.due)-parseDue(b.task.due);});
+  return r;
+}
 function renderAttn(){
   var items=getAttn();
-  var html='<div class="page-header"><div><div class="page-title">⚠ Needs Attention</div><div class="page-subtitle">'+items.length+' items</div></div></div>';
-  if(!items.length)return html+'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">All clear!</div></div>';
-  return html+'<div class="alert-list">'+items.map(function(item){
-    var p=item.proj;var e=ge(p.entity);
-    var lbl=item.type==='overdue'?'Overdue':item.type==='risk'?'At Risk':item.type==='task-overdue'?'Has Overdue Tasks':'Due Within 7 Days';
-    var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':item.type==='task-overdue'?'🔶':'🟡';
-    return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
-      '<span class="alert-icon">'+ic+'</span>'+
-      '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+fmtDate(p.due):'')+'</div></div>'+
-      '<span class="alert-tag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
-  }).join('')+'</div>';
+  var atasks=getAttnTasks();
+  var total=items.length+atasks.length;
+  var html='<div class="page-header"><div><div class="page-title">⚠ Needs Attention</div><div class="page-subtitle">'+total+' items</div></div></div>';
+  if(!total)return html+'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">All clear!</div></div>';
+  if(items.length){
+    html+='<div class="section-header"><div class="section-title">Projects</div></div>';
+    html+='<div class="alert-list">'+items.map(function(item){
+      var p=item.proj;var e=ge(p.entity);
+      var lbl=item.type==='overdue'?'Overdue':item.type==='risk'?'At Risk':item.type==='task-overdue'?'Has Overdue Tasks':'Due Within 7 Days';
+      var ic=item.type==='overdue'?'🔴':item.type==='risk'?'⚠️':item.type==='task-overdue'?'🔶':'🟡';
+      return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
+        '<span class="alert-icon">'+ic+'</span>'+
+        '<div><div class="alert-title">'+h(p.name)+'</div><div class="alert-sub">'+lbl+(p.due?' · Due: '+fmtDate(p.due):'')+'</div></div>'+
+        '<span class="alert-tag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
+    }).join('')+'</div>';
+  }
+  if(atasks.length){
+    html+='<div class="section-header"><div class="section-title">Tasks</div></div>';
+    html+='<div class="alert-list">'+atasks.map(function(item){
+      var p=item.proj;var e=ge(p.entity);
+      var lbl=item.type==='overdue'?'Overdue':'Due Within 7 Days';
+      var ic=item.type==='overdue'?'🔴':'🟡';
+      return '<div class="alert-card '+item.sev+'" onclick="selectProj(\''+p.id+'\')">'+
+        '<span class="alert-icon">'+ic+'</span>'+
+        '<div><div class="alert-title">'+h(item.task.title)+'</div><div class="alert-sub">'+h(p.name)+' · '+lbl+(item.task.due?' · Due: '+fmtDate(item.task.due):'')+'</div></div>'+
+        '<span class="alert-tag" style="background:'+e.color+'20;color:'+e.color+'">'+h(e.short)+'</span></div>';
+    }).join('')+'</div>';
+  }
+  return html;
 }
 
 function renderProjs(){
